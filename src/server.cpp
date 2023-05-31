@@ -11,7 +11,6 @@ int main()
 {
   int sockfd;
   char buffer[BUFFER_SIZE];
-
   struct sockaddr_in serverAddress, clientAddress;
 
   sockfd = socket(AF_INET, SOCK_DGRAM, 0);
@@ -25,7 +24,7 @@ int main()
   serverAddress.sin_family = AF_INET;
   serverAddress.sin_addr.s_addr = INADDR_ANY;
   serverAddress.sin_port = htons(PORT);
-  if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress) < 0))
+  if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
   {
     std::cerr << "Error binding socket" << std::endl;
     return 1;

@@ -2,3 +2,5 @@ client
 server
 Dockerfile
 main.dSYM
+bin
+.vscode

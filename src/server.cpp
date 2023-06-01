@@ -9,11 +9,13 @@ const int BUFFER_SIZE = 1024;
 
 int main()
 {
-  int sockfd;
-  char buffer[BUFFER_SIZE];
+  int sockfd, clientfd, valRead;
+  char buffer[BUFFER_SIZE] = {0};
   struct sockaddr_in serverAddress, clientAddress;
+  int addrLen = sizeof(serverAddress);
+  const char *greeting = "Hello from the server!";
 
-  sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
   if (sockfd < 0)
   {
     std::cerr << "Error creating socket" << std::endl;
@@ -24,24 +26,31 @@ int main()
   serverAddress.sin_family = AF_INET;
   serverAddress.sin_addr.s_addr = INADDR_ANY;
   serverAddress.sin_port = htons(PORT);
-  if (bind(sockfd, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0)
+  if (bind(sockfd, (struct sockaddr *)&serverAddress, addrLen) < 0)
   {
     std::cerr << "Error binding socket" << std::endl;
     return 1;
   }
 
-  // Receive and print messages
-  while (true)
+  if (listen(sockfd, 3) < 0)
   {
-    unsigned int len = sizeof(clientAddress);
-    ssize_t n = recvfrom(sockfd, buffer, sizeof(buffer), 0, (struct sockaddr *)&clientAddress, &len);
-    if (n < 0)
-    {
-      std::cerr << "Error receiving data" << std::endl;
-      return 1;
-    }
-    std::cout << "Received message: " << buffer << std::endl;
+    std::cerr << "Listen failed" << std::endl;
+    return -1;
   }
+
+  socklen_t client_len;
+
+  if ((clientfd = accept(sockfd, (struct sockaddr *)&serverAddress, &client_len)) < 0)
+  {
+    std::cerr << "Accept failed" << std::endl;
+    return 1;
+  }
+
+  // Receive and print messages
+  valRead = read(clientfd, buffer, BUFFER_SIZE);
+  std::cout << "Received: " << buffer << std::endl;
+  send(clientfd, greeting, strlen(greeting), 0);
+  std::cout << "Response sent" << std::endl;
 
   close(sockfd);
 

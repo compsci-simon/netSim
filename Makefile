@@ -18,4 +18,4 @@ $(NODE_BIN): $(NODE_SRC)
 	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm -f $(ROUTER_BIN) $(NODE_BIN)
+	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM

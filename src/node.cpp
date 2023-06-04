@@ -65,6 +65,7 @@ public:
       std::cout << std::endl;
       sendMessageToServer(msg);
       msg = receivMessageFromServer();
+      std::cout << "Received from server: " << msg << std::endl;
     }
   }
 };

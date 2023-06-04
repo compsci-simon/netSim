@@ -1,21 +1,21 @@
 CC = g++
-CFLAGS = -Wall -std=c++14
+CFLAGS = -Wall -std=c++14 -g
 
-CLIENT_SRC = src/client.cpp
-SERVER_SRC = src/server.cpp
+NODE_SRC = src/node.cpp
+ROUTER_SRC = src/router.cpp
 
-SERVER_BIN = bin/server
-CLIENT_BIN = bin/client
+ROUTER_BIN = bin/router
+NODE_BIN = bin/node
 
 .PHONY: all clean
 
-all: $(SERVER_BIN) $(CLIENT_BIN)
+all: $(ROUTER_BIN) $(NODE_BIN)
 
-$(SERVER_BIN): $(SERVER_SRC)
+$(ROUTER_BIN): $(ROUTER_SRC)
 	$(CC) $(CFLAGS) -o $@ $<
 
-$(CLIENT_BIN): $(CLIENT_SRC)
+$(NODE_BIN): $(NODE_SRC)
 	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm -f $(SERVER_BIN) $(CLIENT_BIN)
+	rm -f $(ROUTER_BIN) $(NODE_BIN)

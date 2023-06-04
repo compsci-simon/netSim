@@ -12,6 +12,7 @@ const int BUFFER_SIZE = 1024;
 
 
 void handleConnection(int sockfd) {
+  std::cout << "Handling connection for socket " << sockfd << std::endl;
   while (true) {
     // Receive and print messages
     int valRead;
@@ -31,11 +32,12 @@ class Router {
 private:
   int sockfd;
   struct sockaddr_in serverAddress, clientAddress;
+  std::vector<int> clients;
+  std::vector<int> threads;
 public:
-
   bool accept_connections() {
     int addrLen = sizeof(serverAddress);
-    std::vector<int> clients;
+    std::vector<std::thread> threads;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd < 0) {
@@ -71,9 +73,11 @@ public:
         return false;
       } else {
         clients.push_back(temp);
-        // handleConnection(temp);
-        std::thread thread (handleConnection, temp);
+        threads.emplace_back(handleConnection, temp);
       }
+    }
+    for (int i = 0; i < threads.size(); i++) {
+      threads.at(i).join();
     }
   }
 };

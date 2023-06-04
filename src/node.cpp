@@ -17,21 +17,29 @@ class Node
   char buffer[BUFFER_SIZE];
   struct sockaddr_in serverAddress;
 
-  int sendMessageToServer(std::string message) {
-    send(sockfd, (const char*)&message, message.length(), 0);
-    return 0;
-  }
-  std::string receivMessageFromServer() {
-    read(sockfd, buffer, BUFFER_SIZE);
-    std::string str(buffer);
-    return str;
-  }
+  int sendMessageToServer(std::string message);
+  std::string receivMessageFromServer();
 public:
   Node(int port, char *host) {
     Node::port = port;
     Node::host = host;
   };
-  int connectToServer() {
+  int connect_to_server();
+  void main_loop();
+};
+
+int Node::sendMessageToServer(std::string message) {
+  send(sockfd, (const char*)&message, message.length(), 0);
+  return 0;
+}
+
+std::string Node::receivMessageFromServer() {
+  read(sockfd, buffer, BUFFER_SIZE);
+  std::string str(buffer);
+  return str;
+}
+
+int Node::connect_to_server() {
 
     // Create socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -57,23 +65,25 @@ public:
     }
     return 0;
   }
-  void mainLoop() {
+
+void Node::main_loop() {
     std::string msg;
     while (true) {
       std::cout << "Enter message: ";
-      std::cin >> msg;
+      std::string msg;
+      std::getline(std::cin, msg);
       std::cout << std::endl;
       sendMessageToServer(msg);
-      msg = receivMessageFromServer();
-      std::cout << "Received from server: " << msg << std::endl;
+      std::string from_server = receivMessageFromServer();
+      std::cout << "Received from server: " << from_server << std::endl;
     }
   }
-};
+
 int main() {
   Node *node;
   node = new Node(PORT, (char *)"localhost");
-  node->connectToServer();
-  node->mainLoop();
+  node->connect_to_server();
+  node->main_loop();
   delete node;
   return 0;
 }

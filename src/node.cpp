@@ -5,6 +5,8 @@
 #include <cstring>
 #include <unistd.h>
 #include <string>
+#include "logging.h"
+#include <thread>
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 1024;
@@ -16,13 +18,16 @@ class Node
   char* host;
   char buffer[BUFFER_SIZE];
   struct sockaddr_in serverAddress;
+  const char* name;
 
   int sendMessageToServer(std::string message);
-  std::string receivMessageFromServer();
+  std::string receive_messages_from_server();
+  void echo_messages_received();
 public:
-  Node(int port, char *host) {
-    Node::port = port;
-    Node::host = host;
+  Node(int port, char *host, const char* name) {
+    this->port = port;
+    this->host = host;
+    this->name = name;
   };
   int connect_to_server();
   void main_loop();
@@ -33,10 +38,17 @@ int Node::sendMessageToServer(std::string message) {
   return 0;
 }
 
-std::string Node::receivMessageFromServer() {
+std::string Node::receive_messages_from_server() {
   read(sockfd, buffer, BUFFER_SIZE);
   std::string str(buffer);
   return str;
+}
+
+void Node::echo_messages_received() {
+  while (true) {
+    std::string msg = receive_messages_from_server();
+    std::cout << msg << std::endl;
+  }
 }
 
 int Node::connect_to_server() {
@@ -68,20 +80,20 @@ int Node::connect_to_server() {
 
 void Node::main_loop() {
     std::string msg;
+    std::thread thread(&Node::echo_messages_received, this);
     while (true) {
       std::cout << "Enter message: ";
       std::string msg;
       std::getline(std::cin, msg);
       std::cout << std::endl;
       sendMessageToServer(msg);
-      std::string from_server = receivMessageFromServer();
-      std::cout << "Received from server: " << from_server << std::endl;
     }
+    thread.join();
   }
 
-int main() {
+int main(int argc, char* argv[]) {
   Node *node;
-  node = new Node(PORT, (char *)"localhost");
+  node = new Node(PORT, (char *)"localhost", argv[1]);
   node->connect_to_server();
   node->main_loop();
   delete node;

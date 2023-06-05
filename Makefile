@@ -18,4 +18,4 @@ $(NODE_BIN): $(NODE_SRC)
 	$(CC) $(CFLAGS) -o $@ $<
 
 clean:
-	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM
+	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM /Users/simon/Desktop/netSim.log

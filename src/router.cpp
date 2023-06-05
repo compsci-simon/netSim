@@ -16,12 +16,14 @@ private:
   struct sockaddr_in serverAddress, clientAddress;
   std::vector<int> clients;
   std::vector<int> threads;
-  static void handleConnection(int socketfd);
+  std::mutex mtx;
+  static void handleConnection(int socketfd, Router *router);
 public:
   bool accept_connections();
+  void broadcast(char *msg);
 };
 
-void Router::handleConnection(int socketfd) {
+void Router::handleConnection(int socketfd, Router *router) {
   std::cout << "Handling connection for socket " << socketfd << std::endl;
   while (true) {
     // Receive and print messages
@@ -33,7 +35,7 @@ void Router::handleConnection(int socketfd) {
       break;
     }
     std::cout << "Received from client " << socketfd << ": " << buffer << std::endl;
-    send(socketfd, buffer, BUFFER_SIZE, 0);
+    router->broadcast(buffer);
   }
   close(socketfd);
 }
@@ -76,12 +78,21 @@ bool Router::accept_connections() {
       return false;
     } else {
       clients.push_back(temp);
-      threads.emplace_back(handleConnection, temp);
+      threads.emplace_back(handleConnection, temp, this);
     }
   }
   for (int i = 0; i < threads.size(); i++) {
     threads.at(i).join();
   }
+}
+
+void Router::broadcast(char *msg) {
+  mtx.lock();
+  for (int i = 0; i < clients.size(); i++) {
+    int sfd = clients.at(i);
+    send(sfd, msg, sizeof(msg), 0);
+  }
+  mtx.unlock();
 }
 
 int main()

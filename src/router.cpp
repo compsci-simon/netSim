@@ -25,16 +25,20 @@ public:
 
 void Router::handleConnection(int socketfd, Router *router) {
   std::cout << "Handling connection for socket " << socketfd << std::endl;
+  char buffer[BUFFER_SIZE];
   while (true) {
     // Receive and print messages
+    memset(buffer, 0, BUFFER_SIZE);
     int bytesRead;
-    char buffer[BUFFER_SIZE];
     bytesRead = read(socketfd, buffer, BUFFER_SIZE);
     if (bytesRead < 0) {
       std::cerr << "Error reading value" << std::endl;
       break;
     }
     std::cout << "Received from client " << socketfd << ": " << buffer << std::endl;
+    if (strcmp(buffer, "quit") == 0) {
+      break;
+    }
     router->broadcast(buffer);
   }
   close(socketfd);
@@ -90,6 +94,8 @@ void Router::broadcast(char *msg) {
   mtx.lock();
   for (int i = 0; i < clients.size(); i++) {
     int sfd = clients.at(i);
+    int msg_len = sizeof(msg);
+    int strl = strlen(msg);
     send(sfd, msg, sizeof(msg), 0);
   }
   mtx.unlock();

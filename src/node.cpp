@@ -17,11 +17,12 @@ class Node
   int port;
   char* host;
   char buffer[BUFFER_SIZE];
+  char* send_buffer;
   struct sockaddr_in serverAddress;
   const char* name;
 
   int sendMessageToServer(std::string message);
-  std::string receive_messages_from_server();
+  char* receive_messages_from_server();
   void echo_messages_received();
 public:
   Node(int port, char *host, const char* name) {
@@ -34,19 +35,22 @@ public:
 };
 
 int Node::sendMessageToServer(std::string message) {
-  send(sockfd, (const char*)&message, message.length(), 0);
+  int msg_len = message.size();
+  send_buffer = new char[msg_len];
+  strcpy(send_buffer, message.c_str());
+  send(sockfd, send_buffer, msg_len, 0);
   return 0;
 }
 
-std::string Node::receive_messages_from_server() {
+char* Node::receive_messages_from_server() {
+  memset(buffer, 0, BUFFER_SIZE);
   read(sockfd, buffer, BUFFER_SIZE);
-  std::string str(buffer);
-  return str;
+  return buffer;
 }
 
 void Node::echo_messages_received() {
   while (true) {
-    std::string msg = receive_messages_from_server();
+    char* msg = receive_messages_from_server();
     std::cout << msg << std::endl;
   }
 }
@@ -82,11 +86,11 @@ void Node::main_loop() {
     std::string msg;
     std::thread thread(&Node::echo_messages_received, this);
     while (true) {
-      std::cout << "Enter message: ";
-      std::string msg;
       std::getline(std::cin, msg);
-      std::cout << std::endl;
       sendMessageToServer(msg);
+      if (msg == "quit") {
+        break;
+      }
     }
     thread.join();
   }

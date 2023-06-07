@@ -84,18 +84,15 @@ int Node::connect_to_server() {
 
 void Node::main_loop() {
     std::string msg;
-    char* message;
-    // std::thread thread(&Node::echo_messages_received, this);
+    std::thread thread(&Node::echo_messages_received, this);
     while (true) {
       std::getline(std::cin, msg);
       sendMessageToServer(msg);
       if (msg == "quit") {
         break;
       }
-      message = receive_messages_from_server();
-      std::cout << message << std::endl;
     }
-    // thread.join();
+    thread.join();
   }
 
 int main(int argc, char* argv[]) {

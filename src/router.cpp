@@ -94,9 +94,7 @@ void Router::broadcast(char *msg) {
   mtx.lock();
   for (int i = 0; i < clients.size(); i++) {
     int sfd = clients.at(i);
-    int msg_len = sizeof(msg);
-    int strl = strlen(msg);
-    send(sfd, msg, strl, 0);
+    send(sfd, msg, strlen(msg), 0);
   }
   mtx.unlock();
 }

@@ -2,7 +2,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <cstring>
 #include <unistd.h>
 #include <string>
 #include "logging.h"
@@ -20,6 +19,7 @@ class Node
   char* send_buffer;
   struct sockaddr_in serverAddress;
   const char* name;
+  bool listen;
 
   int sendMessageToServer(std::string message);
   char* receive_messages_from_server();
@@ -44,12 +44,14 @@ int Node::sendMessageToServer(std::string message) {
 
 char* Node::receive_messages_from_server() {
   memset(buffer, 0, BUFFER_SIZE);
-  read(sockfd, buffer, BUFFER_SIZE);
+  if (read(sockfd, buffer, BUFFER_SIZE) <= 0) {
+    listen = false;
+  }
   return buffer;
 }
 
 void Node::echo_messages_received() {
-  while (true) {
+  while (listen) {
     char* msg = receive_messages_from_server();
     std::cout << msg << std::endl;
   }
@@ -85,10 +87,12 @@ int Node::connect_to_server() {
 void Node::main_loop() {
     std::string msg;
     std::thread thread(&Node::echo_messages_received, this);
-    while (true) {
+    listen = true;
+    while (listen) {
       std::getline(std::cin, msg);
       sendMessageToServer(msg);
       if (msg == "quit") {
+        listen = false;
         break;
       }
     }

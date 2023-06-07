@@ -96,7 +96,7 @@ void Router::broadcast(char *msg) {
     int sfd = clients.at(i);
     int msg_len = sizeof(msg);
     int strl = strlen(msg);
-    send(sfd, msg, sizeof(msg), 0);
+    send(sfd, msg, strl, 0);
   }
   mtx.unlock();
 }

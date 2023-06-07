@@ -5,6 +5,7 @@
 #include <vector>
 #include <thread>
 #include <arpa/inet.h>
+#include <random>
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 1024;

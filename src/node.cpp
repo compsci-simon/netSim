@@ -6,6 +6,8 @@
 #include <string>
 #include "logging.h"
 #include <thread>
+#include <random>
+#include <iomanip>
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 1024;
@@ -100,10 +102,15 @@ void Node::main_loop() {
   }
 
 int main(int argc, char* argv[]) {
-  Node *node;
-  node = new Node(PORT, (char *)"localhost", argv[1]);
-  node->connect_to_server();
-  node->main_loop();
-  delete node;
+  // Node *node;
+  // node = new Node(PORT, (char *)"localhost", argv[1]);
+  // node->connect_to_server();
+  // node->main_loop();
+  // delete node;
+  std::random_device seed;
+  std::mt19937 gen(seed());
+  std::uniform_int_distribution<> dis(0, 15);
+  int randomNumber = dis(gen);
+  std::cout << std::hex << randomNumber << std::endl;
   return 0;
 }

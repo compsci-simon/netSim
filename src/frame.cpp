@@ -2,7 +2,7 @@
 #include<array>
 #include "frame.h"
 
-Frame::Frame(char* frame_string) {
+Frame::Frame(unsigned char* frame_string) {
   load_frame_from_string(frame_string);
 }
 
@@ -19,7 +19,12 @@ void Frame::set_payload(unsigned char* new_payload) {
   memcpy(payload, new_payload, PAYLOAD_SIZE);
 }
 
-void Frame::to_string(char* sbuff) {
+void Frame::get_payload(unsigned char* buffer) {
+  memset(buffer, 0, PAYLOAD_SIZE);
+  memcpy(buffer, payload, PAYLOAD_SIZE);
+}
+
+void Frame::to_string(unsigned char* sbuff) {
   memcpy(sbuff, preamble, 7);
   memcpy(sbuff+7, &SFD, 1);
   memcpy(sbuff+8, source, 6);
@@ -29,7 +34,7 @@ void Frame::to_string(char* sbuff) {
   memcpy(sbuff+PAYLOAD_SIZE+22, CRC, 4);
 }
 
-void Frame::load_frame_from_string(char* frame_string) {
+void Frame::load_frame_from_string(unsigned char* frame_string) {
   memcpy(preamble, frame_string, 7);
   frame_string += 7;
   memcpy(&SFD, frame_string, 1);

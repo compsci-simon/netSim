@@ -6,9 +6,11 @@
 #include <thread>
 #include <arpa/inet.h>
 #include <random>
+#include "frame.h"
 
 const int PORT = 12345;
-const int BUFFER_SIZE = 1024;
+const int BUFFER_SIZE = 1600;
+// const unsigned char IP[4] = { 192, 168, 0, 1 };
 
 class Router {
 private:
@@ -17,32 +19,17 @@ private:
   std::vector<int> clients;
   std::vector<int> threads;
   std::mutex mtx;
+  unsigned char available_ips[255] {0};
   static void handleConnection(int socketfd, Router *router);
 public:
+  Router() {
+    for (int ip = 0; ip < 256; ip++) {
+      available_ips[ip] = 1;
+    }
+  };
   bool accept_connections();
   void broadcast(char *msg);
 };
-
-void Router::handleConnection(int socketfd, Router *router) {
-  std::cout << "Handling connection for socket " << socketfd << std::endl;
-  char buffer[BUFFER_SIZE];
-  while (true) {
-    // Receive and print messages
-    memset(buffer, 0, BUFFER_SIZE);
-    int bytesRead;
-    bytesRead = read(socketfd, buffer, BUFFER_SIZE);
-    if (bytesRead < 0) {
-      std::cerr << "Error reading value" << std::endl;
-      break;
-    }
-    std::cout << "Received from client " << socketfd << ": " << buffer << std::endl;
-    if (strcmp(buffer, "quit") == 0) {
-      break;
-    }
-    router->broadcast(buffer);
-  }
-  close(socketfd);
-}
 
 bool Router::accept_connections() {
   int addrLen = sizeof(serverAddress);
@@ -69,25 +56,63 @@ bool Router::accept_connections() {
 
   socklen_t client_len = sizeof(clientAddress);
   std::cout << "Accepting connections" << std::endl;
+  // while (true) {
+  //   int temp = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
+  //   char ipAddress[INET_ADDRSTRLEN];
+  //   inet_ntop(AF_INET, &(serverAddress.sin_addr), ipAddress, INET_ADDRSTRLEN);
+  //   uint16_t port = ntohs(serverAddress.sin_port);
+  //   std::cout << "Accepted connection" << std::endl;
+  //   std::cout << "Address: " << ipAddress << std::endl;
+  //   std::cout << "Port: " << port << std::endl;
+  //   if (temp < 0) {
+  //     std::cerr << "Accept failed" << std::endl;
+  //     return false;
+  //   } else {
+  //     clients.push_back(temp);
+  //     threads.emplace_back(handleConnection, temp, this);
+  //   }
+  // }
+  // for (int i = 0; i < threads.size(); i++) {
+  //   threads.at(i).join();
+  // }
+  int clientfd = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
+  char ipAddress[INET_ADDRSTRLEN];
+  inet_ntop(AF_INET, &(serverAddress.sin_addr), ipAddress, INET_ADDRSTRLEN);
+  uint16_t port = ntohs(serverAddress.sin_port);
+  std::cout << "Accepted connection" << std::endl;
+  std::cout << "Address: " << ipAddress << std::endl;
+  std::cout << "Port: " << port << std::endl;
+  char buffer[BUFFER_SIZE];
+  Frame ethernet_frame;
+  memset(buffer, 0, BUFFER_SIZE);
+  read(clientfd, buffer, BUFFER_SIZE);
+  ethernet_frame.load_frame_from_string(buffer);
+  close(sockfd);
+  return true;
+}
+
+void Router::handleConnection(int socketfd, Router *router) {
+  std::cout << "Handling connection for socket " << socketfd << std::endl;
+  char buffer[BUFFER_SIZE];
+  Frame ethernet_frame;
+  int bytesRead = 0;
+
   while (true) {
-    int temp = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
-    char ipAddress[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &(serverAddress.sin_addr), ipAddress, INET_ADDRSTRLEN);
-    uint16_t port = ntohs(serverAddress.sin_port);
-    std::cout << "Accepted connection" << std::endl;
-    std::cout << "Address: " << ipAddress << std::endl;
-    std::cout << "Port: " << port << std::endl;
-    if (temp < 0) {
-      std::cerr << "Accept failed" << std::endl;
-      return false;
-    } else {
-      clients.push_back(temp);
-      threads.emplace_back(handleConnection, temp, this);
+    memset(buffer, 0, BUFFER_SIZE);
+    bytesRead = read(socketfd, buffer, BUFFER_SIZE);
+    if (bytesRead < 0)  { 
+      std::cerr << "Error reading value" << std::endl;
+      break;
     }
+
+    ethernet_frame.load_frame_from_string(buffer);
+    std::cout << "Received from client " << socketfd << ": " << buffer << std::endl;
+    if (strcmp(buffer, "quit") == 0) {
+      break;
+    }
+    router->broadcast(buffer);
   }
-  for (int i = 0; i < threads.size(); i++) {
-    threads.at(i).join();
-  }
+  close(socketfd);
 }
 
 void Router::broadcast(char *msg) {

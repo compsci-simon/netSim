@@ -4,27 +4,27 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <string>
-#include "logging.h"
 #include <thread>
-#include <random>
-#include <iomanip>
+#include "logging.h"
+#include "frame.h"
 
 const int PORT = 12345;
-const int BUFFER_SIZE = 1024;
+const int BUFFER_SIZE = 1600;
 
 class Node
 {
   int sockfd;
   int port;
   char* host;
-  char buffer[BUFFER_SIZE];
-  char* send_buffer;
+  char recv_buffer[PAYLOAD_SIZE + 26];
+  char send_buffer[PAYLOAD_SIZE + 26] {0};
   struct sockaddr_in serverAddress;
   const char* name;
   bool listen;
+  std::string macAddress;
 
   int sendMessageToServer(std::string message);
-  char* receive_messages_from_server();
+  void receive_messages_from_server();
   void echo_messages_received();
 public:
   Node(int port, char *host, const char* name) {
@@ -37,25 +37,20 @@ public:
 };
 
 int Node::sendMessageToServer(std::string message) {
-  int msg_len = message.size();
-  send_buffer = new char[msg_len];
-  strcpy(send_buffer, message.c_str());
-  send(sockfd, send_buffer, msg_len, 0);
   return 0;
 }
 
-char* Node::receive_messages_from_server() {
-  memset(buffer, 0, BUFFER_SIZE);
-  if (read(sockfd, buffer, BUFFER_SIZE) <= 0) {
+void Node::receive_messages_from_server() {
+  memset(recv_buffer, 0, BUFFER_SIZE);
+  if (read(sockfd, recv_buffer, BUFFER_SIZE) <= 0) {
     listen = false;
   }
-  return buffer;
 }
 
 void Node::echo_messages_received() {
   while (listen) {
-    char* msg = receive_messages_from_server();
-    std::cout << msg << std::endl;
+    receive_messages_from_server();
+    std::cout << recv_buffer << std::endl;
   }
 }
 
@@ -83,6 +78,12 @@ int Node::connect_to_server() {
       std::cerr << "Error connecting to the server" << std::endl;
       return 1;
     }
+    Frame frame;
+    const char* payload = "asdf";
+    frame.set_payload((unsigned char*) payload);
+    frame.to_string(send_buffer);
+    send(sockfd, send_buffer, BUFFER_SIZE, 0);
+    close(sockfd);
     return 0;
   }
 
@@ -102,15 +103,12 @@ void Node::main_loop() {
   }
 
 int main(int argc, char* argv[]) {
-  // Node *node;
-  // node = new Node(PORT, (char *)"localhost", argv[1]);
-  // node->connect_to_server();
-  // node->main_loop();
-  // delete node;
-  std::random_device seed;
-  std::mt19937 gen(seed());
-  std::uniform_int_distribution<> dis(0, 15);
-  int randomNumber = dis(gen);
-  std::cout << std::hex << randomNumber << std::endl;
+  if (argc < 2) {
+    std::cerr << "You must supply a name for this node" << std::endl;
+    return 1;
+  }
+  Node node(PORT, (char *)"localhost", argv[1]);
+  node.connect_to_server();
+  // node.main_loop();
   return 0;
 }

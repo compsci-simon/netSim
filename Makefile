@@ -11,11 +11,11 @@ NODE_BIN = bin/node
 
 all: $(ROUTER_BIN) $(NODE_BIN)
 
-$(ROUTER_BIN): $(ROUTER_SRC)
-	$(CC) $(CFLAGS) -o $@ $<
+$(ROUTER_BIN): $(ROUTER_SRC) src/frame.cpp
+	$(CC) $(CFLAGS) -o $@ $^
 
-$(NODE_BIN): $(NODE_SRC)
-	$(CC) $(CFLAGS) -o $@ $<
+$(NODE_BIN): $(NODE_SRC) src/frame.cpp
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
 	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM /Users/simon/Desktop/netSim.log

@@ -4,7 +4,6 @@
 
 const int PAYLOAD_SIZE = 1500;
 class Frame {
-  unsigned char string_buffer[PAYLOAD_SIZE + 26] {0};
   unsigned char preamble[7] {0};
   unsigned char SFD = 0b10101011;
   unsigned char source[6] {0};
@@ -18,6 +17,7 @@ public:
   void set_payload(unsigned char* new_payload);
   void set_source(unsigned char* source);
   void set_destination(unsigned char* destination);
-  unsigned char* to_string();
+  void to_string(char* sbuff);
+  void load_frame_from_string(char* frame_string);
 };
 #endif

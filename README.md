@@ -11,10 +11,14 @@ Connect all nodes together and simulate the ethernet protocol on the physical la
 Send signalling messages over the network (ARP Scanning) to discover hosts.
 
 ### Lines of code
-      18 text files.
-classified 17 files      17 unique files.                              
-       9 files ignored.
 
+      18 text files.
+
+classified 17 files
+17 unique files.  
+ 9 files ignored.
+
+<p>
 github.com/AlDanial/cloc v 1.94  T=0.01 s (1338.2 files/s, 60772.2 lines/s)
 -------------------------------------------------------------------------------
 Language                     files          blank        comment           code
@@ -29,3 +33,4 @@ Markdown                         1              6              0              7
 -------------------------------------------------------------------------------
 SUM:                            17             66             74            632
 -------------------------------------------------------------------------------
+</p>

@@ -8,21 +8,20 @@ The goal of this project is to simulate a network, including network devices, th
 
 Connect all nodes together and simulate the ethernet protocol on the physical layer.
 
-Send signalling messages over the network (ARP Scanning) to discover hosts.
+Encapsulate IP packets inside the link-layer frames. Then encapsulate Datagram packets inside IP packets.
 
 ### Lines of code
 
-cloc|github.com/AlDanial/cloc v 1.94  T=0.01 s (1994.6 files/s, 91986.5 lines/s)
+cloc|github.com/AlDanial/cloc v 1.94  T=0.01 s (1853.1 files/s, 90223.7 lines/s)
 --- | ---
 
 Language|files|blank|comment|code
 :-------|-------:|-------:|-------:|-------:
-C++|6|48|42|405
+C++|6|48|42|407
 JSON|1|0|0|72
 C/C++ Header|4|4|31|67
 XML|3|0|0|60
-Markdown|1|8|0|20
+Markdown|1|8|0|19
 make|1|7|0|14
-Bourne Shell|1|0|0|6
 --------|--------|--------|--------|--------
-SUM:|17|67|73|644
+SUM:|16|67|73|639

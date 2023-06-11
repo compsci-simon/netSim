@@ -97,6 +97,7 @@ int Node::connect_to_server() {
     data[10] = 'd';
     data[11] = '!';
     data[12] = '!';
+    data[13] = '!';
 
     packet.set_destination(DHCP_DISCOVER);
     packet.set_payload(data);

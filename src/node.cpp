@@ -1,5 +1,5 @@
-#include <iostream>
 #include <sys/socket.h>
+#include <iostream>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
@@ -7,6 +7,8 @@
 #include <thread>
 #include "logging.h"
 #include "frame.h"
+#include "packet.h"
+#include "utils.h"
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 1600;
@@ -16,12 +18,12 @@ class Node
   int sockfd;
   int port;
   char* host;
-  char recv_buffer[PAYLOAD_SIZE + 26];
-  char send_buffer[PAYLOAD_SIZE + 26] {0};
+  unsigned char recv_buffer[FRAME_SIZE];
+  unsigned char send_buffer[FRAME_SIZE] {0};
   struct sockaddr_in serverAddress;
   const char* name;
   bool listen;
-  std::string macAddress;
+  unsigned char macAddress[6] {0};
 
   int sendMessageToServer(std::string message);
   void receive_messages_from_server();
@@ -31,6 +33,7 @@ public:
     this->port = port;
     this->host = host;
     this->name = name;
+    generate_mac_address(macAddress);
   };
   int connect_to_server();
   void main_loop();
@@ -79,8 +82,26 @@ int Node::connect_to_server() {
       return 1;
     }
     Frame frame;
-    const char* payload = "asdf";
-    frame.set_payload((unsigned char*) payload);
+    Packet packet;
+    unsigned char data[PACKET_PAYLOAD_SIZE] {0};
+    data[0] = 'H';
+    data[1] = 'e';
+    data[2] = 'l';
+    data[3] = 'l';
+    data[4] = 'o';
+    data[5] = ' ';
+    data[6] = 'W';
+    data[7] = 'o';
+    data[8] = 'r';
+    data[9] = 'l';
+    data[10] = 'd';
+    data[11] = '!';
+
+    packet.set_destination(DHCP_DISCOVER);
+    packet.set_payload(data);
+
+    frame.set_source(macAddress);
+    frame.set_payload(packet);
     frame.to_string(send_buffer);
     send(sockfd, send_buffer, BUFFER_SIZE, 0);
     close(sockfd);

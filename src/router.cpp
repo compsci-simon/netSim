@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <random>
 #include "frame.h"
+#include "packet.h"
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 1600;
@@ -82,11 +83,19 @@ bool Router::accept_connections() {
   std::cout << "Accepted connection" << std::endl;
   std::cout << "Address: " << ipAddress << std::endl;
   std::cout << "Port: " << port << std::endl;
-  char buffer[BUFFER_SIZE];
+
+  unsigned char recv_buf[FRAME_SIZE] {0};
+  unsigned char payload_buf[PACKET_PAYLOAD_SIZE] {0};
+  
   Frame ethernet_frame;
-  memset(buffer, 0, BUFFER_SIZE);
-  read(clientfd, buffer, BUFFER_SIZE);
-  ethernet_frame.load_frame_from_string(buffer);
+  Packet ip_packet;
+  memset(recv_buf, 0, FRAME_SIZE);
+  read(clientfd, recv_buf, FRAME_SIZE);
+  ethernet_frame.load_frame_from_string(recv_buf);
+  ethernet_frame.load_packet(&ip_packet);
+  ip_packet.get_payload(payload_buf);
+
+  std::cout << "Received an IP packet with the following payload: " << payload_buf << std::endl;
   close(sockfd);
   return true;
 }
@@ -105,7 +114,6 @@ void Router::handleConnection(int socketfd, Router *router) {
       break;
     }
 
-    ethernet_frame.load_frame_from_string(buffer);
     std::cout << "Received from client " << socketfd << ": " << buffer << std::endl;
     if (strcmp(buffer, "quit") == 0) {
       break;

@@ -5,6 +5,8 @@
 
 const int FRAME_PAYLOAD_SIZE = 1500;
 const int FRAME_SIZE = FRAME_PAYLOAD_SIZE + 26;
+const unsigned char ETHERNET_BROADCAST_ADDRESS[6] {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
 class Frame {
   unsigned char preamble[7] {0};
   unsigned char SFD = 0b10101011;

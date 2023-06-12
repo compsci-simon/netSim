@@ -52,6 +52,8 @@ public:
   void get_payload(unsigned char* buffer);
   void set_source_port(short int source_port);
   void set_destination_port(short int destination_port);
+  short int get_source_port();
+  short int get_destination_port();
   void get_bytestring(unsigned char* buffer);
   void instantiate_from_bytestring(unsigned char* byte_string);
 };

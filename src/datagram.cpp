@@ -21,6 +21,14 @@ void Datagram::set_destination_port(short int destination_port) {
   this->destination_port = destination_port;
 }
 
+short int Datagram::get_source_port() {
+  return source_port;
+}
+
+short int Datagram::get_destination_port() {
+  return destination_port;
+}
+
 /*
 This method sets the payload of a datagram packet.
 Parameters:

@@ -8,6 +8,8 @@
 #include "logging.h"
 #include "frame.h"
 #include "packet.h"
+#include "datagram.h"
+#include "dhcp.h"
 #include "utils.h"
 
 const int PORT = 12345;
@@ -33,7 +35,13 @@ public:
     this->port = port;
     this->host = host;
     this->name = name;
-    generate_mac_address(macAddress);
+    // generate_mac_address(macAddress);
+    macAddress[0] = 0xff;
+    macAddress[1] = 0xff;
+    macAddress[2] = 0xab;
+    macAddress[3] = 0xcd;
+    macAddress[4] = 0xef;
+    macAddress[5] = 0x01;
   };
   int connect_to_server();
   void main_loop();
@@ -83,28 +91,23 @@ int Node::connect_to_server() {
     }
     Frame frame;
     Packet packet;
-    unsigned char data[PACKET_PAYLOAD_SIZE] {0};
-    data[0] = 'H';
-    data[1] = 'e';
-    data[2] = 'l';
-    data[3] = 'l';
-    data[4] = 'o';
-    data[5] = ' ';
-    data[6] = 'W';
-    data[7] = 'o';
-    data[8] = 'r';
-    data[9] = 'l';
-    data[10] = 'd';
-    data[11] = '!';
-    data[12] = '!';
-    data[13] = '!';
+    Datagram datagram;
+    DHCP_Message dhcp_message;
+
+    dhcp_message.set_op(1);
+
+    datagram.set_source_port(68);
+    datagram.set_destination_port(67);
+    datagram.set_payload(&dhcp_message);
 
     packet.set_destination(DHCP_DISCOVER);
-    packet.set_payload(data);
+    packet.set_payload(&datagram);
 
     frame.set_source(macAddress);
+    frame.set_destination((unsigned char*) ETHERNET_BROADCAST_ADDRESS);
     frame.set_payload(packet);
     frame.to_string(send_buffer);
+    
     send(sockfd, send_buffer, BUFFER_SIZE, 0);
     close(sockfd);
     return 0;

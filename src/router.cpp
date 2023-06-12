@@ -8,6 +8,7 @@
 #include <random>
 #include "frame.h"
 #include "packet.h"
+#include "datagram.h"
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 1600;
@@ -20,13 +21,16 @@ private:
   std::vector<int> clients;
   std::vector<int> threads;
   std::mutex mtx;
-  unsigned char available_ips[255] {0};
+  unsigned char macAddress[6] {0};
   static void handleConnection(int socketfd, Router *router);
 public:
   Router() {
-    for (int ip = 0; ip < 256; ip++) {
-      available_ips[ip] = 1;
-    }
+    macAddress[0] = 0x01;
+    macAddress[1] = 0x23;
+    macAddress[2] = 0x34;
+    macAddress[3] = 0x45;
+    macAddress[4] = 0x56;
+    macAddress[5] = 0x67;
   };
   bool accept_connections();
   void broadcast(char *msg);
@@ -85,17 +89,22 @@ bool Router::accept_connections() {
   std::cout << "Port: " << port << std::endl;
 
   unsigned char recv_buf[FRAME_SIZE] {0};
-  unsigned char payload_buf[PACKET_PAYLOAD_SIZE] {0};
+  unsigned char data[DATAGRAM_PAYLOAD_LENGTH] {0};
   
   Frame ethernet_frame;
   Packet ip_packet;
+  Datagram datagram;
   memset(recv_buf, 0, FRAME_SIZE);
   read(clientfd, recv_buf, FRAME_SIZE);
+
   ethernet_frame.load_frame_from_string(recv_buf);
   ethernet_frame.load_packet(&ip_packet);
-  ip_packet.get_payload(payload_buf);
 
-  std::cout << "Received an IP packet with the following payload: " << payload_buf << std::endl;
+  ip_packet.load_datagram(&datagram);
+
+  datagram.get_payload(data);
+
+  std::cout << "Received a user datagram packet with the following payload: " << data << std::endl;
   close(sockfd);
   return true;
 }

@@ -43,8 +43,10 @@ public:
     macAddress[4] = 0xef;
     macAddress[5] = 0x01;
   };
-  int connect_to_server();
+  int connect_to_router();
   void main_loop();
+  void obtain_ip_address();
+  void disconnect();
 };
 
 int Node::sendMessageToServer(std::string message) {
@@ -65,53 +67,58 @@ void Node::echo_messages_received() {
   }
 }
 
-int Node::connect_to_server() {
-
-    // Create socket
-    sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd < 0) {
-      std::cerr << "Error creating socket" << std::endl;
-      return 1;
-    }
-
-    // Bind socket to port
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_addr.s_addr = INADDR_ANY;
-    serverAddress.sin_port = htons(port);
-    if (inet_pton(AF_INET, host, &(serverAddress.sin_addr)) < 0) {
-      std::cerr << "Invalid address" << std::endl;
-      return 1;
-    }
-
-    // Connect to server
-    socklen_t serverAddressLen = sizeof(serverAddress);
-    if (connect(sockfd, (struct sockaddr *) &serverAddress, serverAddressLen) < 0) {
-      std::cerr << "Error connecting to the server" << std::endl;
-      return 1;
-    }
-    Frame frame;
-    Packet packet;
-    Datagram datagram;
-    DHCP_Message dhcp_message;
-
-    dhcp_message.set_op(1);
-
-    datagram.set_source_port(68);
-    datagram.set_destination_port(67);
-    datagram.set_payload(&dhcp_message);
-
-    packet.set_destination(DHCP_DISCOVER);
-    packet.set_payload(&datagram);
-
-    frame.set_source(macAddress);
-    frame.set_destination((unsigned char*) ETHERNET_BROADCAST_ADDRESS);
-    frame.set_payload(packet);
-    frame.to_string(send_buffer);
-    
-    send(sockfd, send_buffer, BUFFER_SIZE, 0);
-    close(sockfd);
-    return 0;
+int Node::connect_to_router() {
+  // Create socket
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0) {
+    std::cerr << "Error creating socket" << std::endl;
+    return 1;
   }
+
+  // Bind socket to port
+  serverAddress.sin_family = AF_INET;
+  serverAddress.sin_addr.s_addr = INADDR_ANY;
+  serverAddress.sin_port = htons(port);
+  if (inet_pton(AF_INET, host, &(serverAddress.sin_addr)) < 0) {
+    std::cerr << "Invalid address" << std::endl;
+    return 1;
+  }
+
+  // Connect to server
+  socklen_t serverAddressLen = sizeof(serverAddress);
+  if (connect(sockfd, (struct sockaddr *) &serverAddress, serverAddressLen) < 0) {
+    std::cerr << "Error connecting to the server" << std::endl;
+    return 1;
+  }
+  return 0;
+  }
+
+void Node::obtain_ip_address() {
+  Frame frame;
+  Packet packet;
+  Datagram datagram;
+  DHCP_Message dhcp_message;
+
+  dhcp_message.set_op(1);
+
+  datagram.set_source_port(68);
+  datagram.set_destination_port(67);
+  datagram.set_payload(&dhcp_message);
+
+  packet.set_destination(DHCP_DISCOVER);
+  packet.set_payload(&datagram);
+
+  frame.set_source(macAddress);
+  frame.set_destination((unsigned char*) ETHERNET_BROADCAST_ADDRESS);
+  frame.set_payload(packet);
+  frame.to_string(send_buffer);
+  
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
+}
+
+void Node::disconnect() {
+  close(sockfd);
+}
 
 void Node::main_loop() {
     std::string msg;
@@ -134,7 +141,8 @@ int main(int argc, char* argv[]) {
     return 1;
   }
   Node node(PORT, (char *)"localhost", argv[1]);
-  node.connect_to_server();
-  // node.main_loop();
+  node.connect_to_router();
+  node.obtain_ip_address();
+  node.disconnect();
   return 0;
 }

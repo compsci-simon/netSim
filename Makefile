@@ -11,10 +11,10 @@ NODE_BIN = bin/node
 
 all: $(ROUTER_BIN) $(NODE_BIN)
 
-$(ROUTER_BIN): $(ROUTER_SRC) src/packet.cpp src/frame.cpp src/utils.cpp
+$(ROUTER_BIN): $(ROUTER_SRC) src/datagram.cpp src/packet.cpp src/frame.cpp src/utils.cpp
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(NODE_BIN): $(NODE_SRC) src/packet.cpp src/frame.cpp src/utils.cpp
+$(NODE_BIN): $(NODE_SRC) src/datagram.cpp src/packet.cpp src/frame.cpp src/utils.cpp
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

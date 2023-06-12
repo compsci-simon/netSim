@@ -46,6 +46,9 @@ const int DHCP_OPTIONS_LENGTH = 1232;
 
 class DHCP_Server {
   unsigned char available_ips[255] {0};
+public:
+  DHCP_Server();
+  void handle_dhcp_message(DHCP_Message* message);
 };
 
 class DHCP_Message {
@@ -67,6 +70,15 @@ class DHCP_Message {
 public:
   DHCP_Message();
   void set_op(unsigned char operation);
+  void set_ciaddr(int ciaddr);
+  void set_yiaddr(int yiaddr);
+  void set_siaddr(int siaddr);
+  void set_giaddr(int giaddr);
+  bool is_broadcast();
+  int get_ciaddr();
+  int get_yiaddr();
+  int get_siaddr();
+  int get_giaddr();
 };
 
 #endif

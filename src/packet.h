@@ -32,6 +32,8 @@
 
 #ifndef _PACKET_H_
 #define _PACKET_H_
+#include "datagram.h"
+
 const int PACKET_PAYLOAD_SIZE = 1472;
 const int PACKET_SIZE = 1500;
 const int DHCP_DISCOVER = 0b11111111'11111111'11111111'11111111;
@@ -55,8 +57,10 @@ public:
   void set_destination(int address);
   void set_source(int address);
   void set_payload(unsigned char* buffer);
+  void set_payload(Datagram* datagram);
   void get_payload(unsigned char* buffer);
   void to_byte_string(unsigned char* buffer);
   void load_packet_from_byte_string(unsigned char* byte_string);
+  void load_datagram(Datagram* datagram);
 };
 #endif

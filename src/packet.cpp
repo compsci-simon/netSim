@@ -61,6 +61,15 @@ void Packet::set_payload(unsigned char* buffer) {
 }
 
 /*
+This method is used to set the payload of the IP packet from a datagram.
+Parameters:
+  datagram - The datagram to set as the payload.
+*/
+void Packet::set_payload(Datagram* datagram) {
+  datagram->get_bytestring(data);
+}
+
+/*
 This function is used for transferring the payload of the
 packet into a buffer that is passed in.
 Parameters:
@@ -127,4 +136,14 @@ void Packet::load_packet_from_byte_string(unsigned char* byte_string) {
   memcpy(&options, byte_string, 8);
   byte_string += 8;
   memcpy(data, byte_string, PACKET_PAYLOAD_SIZE);
+}
+
+/*
+This method is used to instantiate a datagram from the bytestring that
+is the payload of an IP packet.
+Parameters:
+  datagram - A pointer to the datagram to instantiate.
+*/
+void Packet::load_datagram(Datagram* datagram) {
+  datagram->instantiate_from_bytestring(data);
 }

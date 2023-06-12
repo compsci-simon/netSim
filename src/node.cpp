@@ -26,6 +26,10 @@ class Node
   const char* name;
   bool listen;
   unsigned char macAddress[6] {0};
+  Frame frame;
+  Packet packet;
+  Datagram datagram;
+  DHCP_Message dhcp_message;
 
   int sendMessageToServer(std::string message);
   void receive_messages_from_server();
@@ -94,18 +98,17 @@ int Node::connect_to_router() {
   }
 
 void Node::obtain_ip_address() {
-  Frame frame;
-  Packet packet;
-  Datagram datagram;
-  DHCP_Message dhcp_message;
 
   dhcp_message.set_op(1);
+  dhcp_message.set_ciaddr(0);
+  dhcp_message.set_giaddr(0);
 
   datagram.set_source_port(68);
   datagram.set_destination_port(67);
   datagram.set_payload(&dhcp_message);
 
   packet.set_destination(DHCP_DISCOVER);
+  packet.set_source(0);
   packet.set_payload(&datagram);
 
   frame.set_source(macAddress);

@@ -1,40 +1,14 @@
-#include <iostream>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <vector>
-#include <thread>
-#include <arpa/inet.h>
-#include <random>
-#include "frame.h"
-#include "packet.h"
-#include "datagram.h"
-
-const int PORT = 12345;
-const int BUFFER_SIZE = 1600;
+#include "router.h"
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
-class Router {
-private:
-  int sockfd;
-  struct sockaddr_in serverAddress, clientAddress;
-  std::vector<int> clients;
-  std::vector<int> threads;
-  std::mutex mtx;
-  unsigned char macAddress[6] {0};
-  static void handleConnection(int socketfd, Router *router);
-public:
-  Router() {
-    macAddress[0] = 0x01;
-    macAddress[1] = 0x23;
-    macAddress[2] = 0x34;
-    macAddress[3] = 0x45;
-    macAddress[4] = 0x56;
-    macAddress[5] = 0x67;
-  };
-  bool accept_connections();
-  void broadcast(char *msg);
-};
+Router::Router() {
+  macAddress[0] = 0x01;
+  macAddress[1] = 0x23;
+  macAddress[2] = 0x34;
+  macAddress[3] = 0x45;
+  macAddress[4] = 0x56;
+  macAddress[5] = 0x67;
+}
 
 bool Router::accept_connections() {
   int addrLen = sizeof(serverAddress);
@@ -87,26 +61,29 @@ bool Router::accept_connections() {
   std::cout << "Accepted connection" << std::endl;
   std::cout << "Address: " << ipAddress << std::endl;
   std::cout << "Port: " << port << std::endl;
-
-  unsigned char recv_buf[FRAME_SIZE] {0};
-  unsigned char data[DATAGRAM_PAYLOAD_LENGTH] {0};
   
-  Frame ethernet_frame;
-  Packet ip_packet;
-  Datagram datagram;
-  memset(recv_buf, 0, FRAME_SIZE);
-  read(clientfd, recv_buf, FRAME_SIZE);
+  return true;
+}
 
-  ethernet_frame.load_frame_from_string(recv_buf);
-  ethernet_frame.load_packet(&ip_packet);
+void Router::handleConnection(int clientfd) {
+  unsigned char data[DATAGRAM_PAYLOAD_LENGTH] {0};
 
-  ip_packet.load_datagram(&datagram);
+  memset(recv_buffer, 0, FRAME_SIZE);
+  read(clientfd, recv_buffer, FRAME_SIZE);
+
+  frame.load_frame_from_string(recv_buffer);
+  frame.load_packet(&packet);
+
+  packet.load_datagram(&datagram);
 
   datagram.get_payload(data);
 
+  if (datagram.get_destination_port() == 67) {
+
+  }
+
   std::cout << "Received a user datagram packet with the following payload: " << data << std::endl;
   close(sockfd);
-  return true;
 }
 
 void Router::handleConnection(int socketfd, Router *router) {
@@ -139,6 +116,10 @@ void Router::broadcast(char *msg) {
     send(sfd, msg, strlen(msg), 0);
   }
   mtx.unlock();
+}
+
+void Router::send_frame(Frame frame) {
+  frame.get_byte_string(send_buffer);
 }
 
 int main()

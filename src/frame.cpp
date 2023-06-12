@@ -27,14 +27,14 @@ void Frame::get_payload(unsigned char* buffer) {
   memcpy(buffer, payload, FRAME_PAYLOAD_SIZE);
 }
 
-void Frame::to_string(unsigned char* sbuff) {
-  memcpy(sbuff, preamble, 7);
-  memcpy(sbuff+7, &SFD, 1);
-  memcpy(sbuff+8, source, 6);
-  memcpy(sbuff+14, destination, 6);
-  memcpy(sbuff+20, &length, 2);
-  memcpy(sbuff+22, payload, FRAME_PAYLOAD_SIZE);
-  memcpy(sbuff+FRAME_PAYLOAD_SIZE+22, CRC, 4);
+void Frame::get_byte_string(unsigned char* buffer) {
+  memcpy(buffer, preamble, 7);
+  memcpy(buffer+7, &SFD, 1);
+  memcpy(buffer+8, source, 6);
+  memcpy(buffer+14, destination, 6);
+  memcpy(buffer+20, &length, 2);
+  memcpy(buffer+22, payload, FRAME_PAYLOAD_SIZE);
+  memcpy(buffer+FRAME_PAYLOAD_SIZE+22, CRC, 4);
 }
 
 void Frame::load_frame_from_string(unsigned char* frame_string) {

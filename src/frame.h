@@ -23,7 +23,7 @@ public:
   void get_payload(unsigned char* buffer);
   void set_source(unsigned char* source);
   void set_destination(unsigned char* destination);
-  void to_string(unsigned char* sbuff);
+  void get_byte_string(unsigned char* buffer);
   void load_frame_from_string(unsigned char* frame_string);
   void load_packet(Packet* packet);
 };

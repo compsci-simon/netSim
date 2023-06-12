@@ -38,6 +38,8 @@ in detail in RFC 2131 (https://www.rfc-editor.org/rfc/rfc2131).
 #ifndef _DHCP_H_
 #define _DHCP_H_
 
+#include "router.h"
+
 const unsigned char BOOT_REQUEST = 1;
 const unsigned char BOOT_REPLY = 2;
 const int DHCP_LENGTH = 1468;
@@ -46,8 +48,9 @@ const int DHCP_OPTIONS_LENGTH = 1232;
 
 class DHCP_Server {
   unsigned char available_ips[255] {0};
+  Router* router;
 public:
-  DHCP_Server();
+  DHCP_Server(Router* router);
   void handle_dhcp_message(DHCP_Message* message);
 };
 
@@ -74,6 +77,7 @@ public:
   void set_yiaddr(int yiaddr);
   void set_siaddr(int siaddr);
   void set_giaddr(int giaddr);
+  void set_broadcast();
   bool is_broadcast();
   int get_ciaddr();
   int get_yiaddr();

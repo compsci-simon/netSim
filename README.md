@@ -12,7 +12,7 @@ Encapsulate IP packets inside the link-layer frames. Then encapsulate Datagram p
 
 ### Lines of code
 
-cloc|github.com/AlDanial/cloc v 1.94  T=0.02 s (1373.9 files/s, 83807.6 lines/s)
+cloc|github.com/AlDanial/cloc v 1.94  T=0.01 s (2154.2 files/s, 131408.6 lines/s)
 --- | ---
 
 Language|files|blank|comment|code

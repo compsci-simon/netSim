@@ -83,6 +83,7 @@ public:
   int get_yiaddr();
   int get_siaddr();
   int get_giaddr();
+  void to_bytes(unsigned char* buffer);
 };
 
 #endif

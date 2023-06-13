@@ -26,5 +26,6 @@ public:
   void get_byte_string(unsigned char* buffer);
   void load_frame_from_string(unsigned char* frame_string);
   void load_packet(Packet* packet);
+  void swap_source_and_dest();
 };
 #endif

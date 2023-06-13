@@ -36,7 +36,7 @@
 
 const int PACKET_PAYLOAD_SIZE = 1472;
 const int PACKET_SIZE = 1500;
-const int DHCP_DISCOVER = 0b11111111'11111111'11111111'11111111;
+const int IP_BROADCAST = 0b11111111'11111111'11111111'11111111;
 
 class Packet {
   unsigned char V_IHL = 0b01000101;
@@ -57,7 +57,7 @@ public:
   void set_destination(int address);
   void set_source(int address);
   void set_payload(unsigned char* buffer);
-  void set_payload(Datagram* datagram);
+  void set_payload(Datagram datagram);
   void get_payload(unsigned char* buffer);
   void to_byte_string(unsigned char* buffer);
   void load_packet_from_byte_string(unsigned char* byte_string);

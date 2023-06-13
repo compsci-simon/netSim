@@ -56,3 +56,15 @@ void Frame::load_frame_from_string(unsigned char* frame_string) {
 void Frame::load_packet(Packet* packet) {
   packet->load_packet_from_byte_string(payload);
 }
+
+/*
+This method is used when generating a response
+to a request. The source and destination must
+simply be swapped.
+*/
+void Frame::swap_source_and_dest() {
+  unsigned char temp[6] {0};
+  memcpy(temp, source, 6);
+  memcpy(source, destination, 6);
+  memcpy(destination, temp, 6);
+}

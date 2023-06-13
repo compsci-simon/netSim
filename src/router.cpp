@@ -54,7 +54,7 @@ bool Router::accept_connections() {
   // for (int i = 0; i < threads.size(); i++) {
   //   threads.at(i).join();
   // }
-  int clientfd = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
+  clientfd = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
   char ipAddress[INET_ADDRSTRLEN];
   inet_ntop(AF_INET, &(serverAddress.sin_addr), ipAddress, INET_ADDRSTRLEN);
   uint16_t port = ntohs(serverAddress.sin_port);
@@ -120,6 +120,31 @@ void Router::broadcast(char *msg) {
 
 void Router::send_frame(Frame frame) {
   frame.get_byte_string(send_buffer);
+}
+
+/*
+This method is used to set the source 
+of the router's frame to the router's
+MAC address.
+*/
+void Router::set_self_as_frame_source() {
+  this->frame.set_source(macAddress);
+}
+
+/*
+Getter for the router's IP address.w
+*/
+int Router::get_ip_addr() {
+  return ip_addr;
+}
+
+/*
+This method is used to send the router's
+frame.
+*/
+void Router::send_frame() {
+  frame.get_byte_string(send_buffer);
+  send(clientfd, send_buffer, FRAME_SIZE, 0);
 }
 
 int main()

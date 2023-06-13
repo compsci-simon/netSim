@@ -23,10 +23,12 @@ private:
   std::vector<int> clients;
   std::vector<int> threads;
   std::mutex mtx;
-  unsigned char macAddress[6] {0};
   static void handleConnection(int socketfd, Router *router);
   unsigned char send_buffer[FRAME_SIZE] {0};
   unsigned char recv_buffer[FRAME_SIZE] {0};
+  int ip_addr = 0b11000000'10100100'00000000'00000001;
+  unsigned char macAddress[6] {0};
+  int clientfd;
 public:
   Frame frame;
   Packet packet;
@@ -38,6 +40,9 @@ public:
   void broadcast(char *msg);
   void send_frame(Frame frame);
   void handleConnection(int clientfd);
+  int get_ip_addr();
+  void set_self_as_frame_source();
+  void send_frame();
 };
 
 #endif

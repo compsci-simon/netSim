@@ -30,13 +30,22 @@ short int Datagram::get_destination_port() {
 }
 
 /*
-This method sets the payload of a datagram packet.
+This method sets the payload of a datagram.
 Parameters:
   buffer - A buffer of length exactly DATAGRAM_PAYLOAD_SIZE
 */
 void Datagram::set_payload(unsigned char* buffer) {
   memset(data, 0, DATAGRAM_PAYLOAD_LENGTH);
   memcpy(data, buffer, DATAGRAM_PAYLOAD_LENGTH);
+}
+
+/*
+This methods sets the payload of the datagram.
+Parameters:
+  datagram - the datagram to set as payload bytes
+*/
+void Datagram::set_payload(DHCP_Message* datagram) {
+  datagram->to_bytes(data);
 }
 
 /*

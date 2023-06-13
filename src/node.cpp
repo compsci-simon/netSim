@@ -107,14 +107,14 @@ void Node::obtain_ip_address() {
   datagram.set_destination_port(67);
   datagram.set_payload(&dhcp_message);
 
-  packet.set_destination(DHCP_DISCOVER);
+  packet.set_destination(IP_BROADCAST);
   packet.set_source(0);
-  packet.set_payload(&datagram);
+  packet.set_payload(datagram);
 
   frame.set_source(macAddress);
   frame.set_destination((unsigned char*) ETHERNET_BROADCAST_ADDRESS);
   frame.set_payload(packet);
-  frame.to_string(send_buffer);
+  frame.get_byte_string(send_buffer);
   
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
 }

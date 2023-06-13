@@ -13,6 +13,7 @@ DHCP_Server::DHCP_Server(Router* router) {
 void DHCP_Server::handle_dhcp_message(DHCP_Message* message) {
 
   if (message->is_broadcast() && message->get_ciaddr() == 0 && message->get_giaddr() == 0) {
+    Router* r;
     /*
     If these conditions are met it means the message is a dhcp discover message for a client
     trying to obtain an IP address.
@@ -31,8 +32,21 @@ void DHCP_Server::handle_dhcp_message(DHCP_Message* message) {
         return;
       }
       message->set_yiaddr(new_ip);
-      message->set_siaddr(base_ip | 1);
+      message->set_ciaddr(this->router->get_ip_addr());
     }
+    r = this->router;
+    r->datagram.set_payload(message);
+    r->datagram.set_source_port(67);
+    r->datagram.set_destination_port(68);
+
+    r->packet.set_payload(r->datagram);
+    r->packet.set_destination(IP_BROADCAST);
+    r->packet.set_source(r->get_ip_addr());
+
+    r->frame.set_payload(r->packet);
+    r->frame.swap_source_and_dest();
+    r->set_self_as_frame_source();
+    r->send_frame();
   }
 }
 
@@ -85,4 +99,45 @@ void DHCP_Message::set_broadcast() {
 
 bool DHCP_Message::is_broadcast() {
   return this->flags & 1;
+}
+
+/*
+This method is used when encapsulating the DHCP message
+in a datagram. It is used to populate the payload of the
+datagram.
+Parameters:
+  buffer - An unsigned char buffer of exactly DHCP_LENGTH
+*/
+void DHCP_Message::to_bytes(unsigned char* buffer) {
+  memset(buffer, 0, DHCP_LENGTH);
+  memcpy(buffer, &op, 1);
+  buffer += 1;
+  memcpy(buffer, &htype, 1);
+  buffer += 1;
+  memcpy(buffer, &hlen, 1);
+  buffer += 1;
+  memcpy(buffer, &hops, 1);
+  buffer += 1;
+  memcpy(buffer, &xid, 4);
+  buffer += 4;
+  memcpy(buffer, &secs, 2);
+  buffer += 2;
+  memcpy(buffer, &flags, 2);
+  buffer += 2;
+  memcpy(buffer, &ciaddr, 4);
+  buffer += 4;
+  memcpy(buffer, &yiaddr, 4);
+  buffer += 4;
+  memcpy(buffer, &siaddr, 4);
+  buffer += 4;
+  memcpy(buffer, &giaddr, 4);
+  buffer += 4;
+  memcpy(buffer, chaddr, 16);
+  buffer += 16;
+  memcpy(buffer, sname, 64);
+  buffer += 64;
+  memcpy(buffer, file, 128);
+  buffer += 128;
+  memcpy(buffer, options, DHCP_OPTIONS_LENGTH);
+  buffer += DHCP_OPTIONS_LENGTH;
 }

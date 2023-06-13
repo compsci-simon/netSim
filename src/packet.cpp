@@ -61,12 +61,12 @@ void Packet::set_payload(unsigned char* buffer) {
 }
 
 /*
-This method is used to set the payload of the IP packet from a datagram.
+This method encapsulates a datagram.
 Parameters:
-  datagram - The datagram to set as the payload.
+  datagram - The datagram to encapsulate.
 */
-void Packet::set_payload(Datagram* datagram) {
-  datagram->get_bytestring(data);
+void Packet::set_payload(Datagram datagram) {
+  datagram.get_bytestring(data);
 }
 
 /*

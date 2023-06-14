@@ -8,6 +8,7 @@ Router::Router() {
   macAddress[3] = 0x45;
   macAddress[4] = 0x56;
   macAddress[5] = 0x67;
+  dhcp_server.set_router(this);
 }
 
 bool Router::accept_connections() {
@@ -65,7 +66,7 @@ bool Router::accept_connections() {
   return true;
 }
 
-void Router::handleConnection(int clientfd) {
+void Router::handleConnection() {
   unsigned char data[DATAGRAM_PAYLOAD_LENGTH] {0};
 
   memset(recv_buffer, 0, FRAME_SIZE);
@@ -79,10 +80,9 @@ void Router::handleConnection(int clientfd) {
   datagram.get_payload(data);
 
   if (datagram.get_destination_port() == 67) {
-
+    datagram.unencapsulate_dhcp_message(&dhcp_message);
+    dhcp_server.handle_message(dhcp_message);
   }
-
-  std::cout << "Received a user datagram packet with the following payload: " << data << std::endl;
   close(sockfd);
 }
 

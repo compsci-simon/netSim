@@ -58,6 +58,10 @@ void Datagram::get_payload(unsigned char* buffer) {
   memcpy(buffer, data, DATAGRAM_PAYLOAD_LENGTH);
 }
 
+void Datagram::unencapsulate_dhcp_message(DHCP_Message* dhcp_message) {
+  
+}
+
 /*
 This method fills a provided buffer with the bytestring
 representation of this datagram.

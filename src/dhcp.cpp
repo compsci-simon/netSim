@@ -5,10 +5,6 @@
 DHCP_Server::DHCP_Server() {}
 
 DHCP_Server::DHCP_Server(Router* router) {
-  this->router = router;
-}
-
-DHCP_Server::DHCP_Server(Router* router) {
   for (int i = 0; i < 255; i++) {
     available_ips[i] = 1;
   }

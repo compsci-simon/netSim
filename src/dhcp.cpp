@@ -2,6 +2,12 @@
 #include "router.h"
 #include <iostream>
 
+DHCP_Server::DHCP_Server() {}
+
+DHCP_Server::DHCP_Server(Router* router) {
+  this->router = router;
+}
+
 DHCP_Server::DHCP_Server(Router* router) {
   for (int i = 0; i < 255; i++) {
     available_ips[i] = 1;
@@ -11,7 +17,7 @@ DHCP_Server::DHCP_Server(Router* router) {
   this->router = router;
 }
 
-void DHCP_Server::handle_dhcp_message(DHCP_Message message) {
+void DHCP_Server::handle_message(DHCP_Message message) {
 
   if (message.is_broadcast() && message.get_ciaddr() == 0 && message.get_giaddr() == 0) {
     Router* r;
@@ -35,6 +41,7 @@ void DHCP_Server::handle_dhcp_message(DHCP_Message message) {
       message.set_yiaddr(new_ip);
       message.set_ciaddr(this->router->get_ip_addr());
     }
+    std::cout << "DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED." << std::endl;
     r = this->router;
     r->datagram.set_payload(message);
     r->datagram.set_source_port(67);
@@ -50,6 +57,17 @@ void DHCP_Server::handle_dhcp_message(DHCP_Message message) {
     r->send_frame();
   }
 }
+
+/*
+This is a setter to set the router property.
+Parameters:
+  router - The router object that this server
+  will reference.
+*/
+void DHCP_Server::set_router(Router* router) {
+  this->router = router;
+}
+// ----------------------- DHCP_Message ---------------------------
 
 DHCP_Message::DHCP_Message() {
   options[0] = 99;
@@ -77,6 +95,7 @@ void DHCP_Message::set_siaddr(int siaddr) {
 void DHCP_Message::set_giaddr(int giaddr) {
   this->giaddr = giaddr;
 }
+
 
 int DHCP_Message::get_ciaddr() {
   return this->ciaddr;
@@ -142,3 +161,43 @@ void DHCP_Message::to_bytes(unsigned char* buffer) {
   memcpy(buffer, options, DHCP_OPTIONS_LENGTH);
   buffer += DHCP_OPTIONS_LENGTH;
 }
+
+/*
+This method is used when a datagram is received that contains
+a DHCP message and we want to initialize the dhcp message from
+the datagram payload bytes.
+Parameters:
+  buffer - A buffer of exactly DATAGRAM_PAYLOAD_LENGTH
+*/
+void DHCP_Message::initialize_from_bytes(unsigned char* buffer) {
+  memcpy(&op, buffer, 1);
+  buffer += 1;
+  memcpy(&htype, buffer, 1);
+  buffer += 1;
+  memcpy(&hlen, buffer, 1);
+  buffer += 1;
+  memcpy(&hops, buffer, 1);
+  buffer += 1;
+  memcpy(&xid, buffer, 4);
+  buffer += 4;
+  memcpy(&secs, buffer, 2);
+  buffer += 2;
+  memcpy(&flags, buffer, 2);
+  buffer += 2;
+  memcpy(&ciaddr, buffer, 4);
+  buffer += 4;
+  memcpy(&yiaddr, buffer, 4);
+  buffer += 4;
+  memcpy(&siaddr, buffer, 4);
+  buffer += 4;
+  memcpy(&giaddr, buffer, 4);
+  buffer += 4;
+  memcpy(chaddr, buffer, 16);
+  buffer += 16;
+  memcpy(sname, buffer, 64);
+  buffer += 64;
+  memcpy(file, buffer, 128);
+  buffer += 128;
+  memcpy(options, buffer, DHCP_OPTIONS_LENGTH);
+}
+

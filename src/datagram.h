@@ -50,6 +50,7 @@ public:
   void set_payload(unsigned char* buffer);
   void set_payload(DHCP_Message dhcp_message);
   void get_payload(unsigned char* buffer);
+  void unencapsulate_dhcp_message(DHCP_Message* dhcp_message);
   void set_source_port(short int source_port);
   void set_destination_port(short int destination_port);
   short int get_source_port();

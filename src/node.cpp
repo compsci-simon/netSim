@@ -52,6 +52,7 @@ void Node::obtain_ip_address() {
   dhcp_message.set_op(1);
   dhcp_message.set_ciaddr(0);
   dhcp_message.set_giaddr(0);
+  dhcp_message.set_broadcast();
 
   datagram.set_source_port(68);
   datagram.set_destination_port(67);

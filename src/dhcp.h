@@ -76,6 +76,7 @@ public:
   int get_siaddr();
   int get_giaddr();
   void to_bytes(unsigned char* buffer);
+  void initialize_from_bytes(unsigned char* buffer);
 };
 
 
@@ -83,8 +84,10 @@ class DHCP_Server {
   unsigned char available_ips[255] {0};
   Router* router;
 public:
+  DHCP_Server();
   DHCP_Server(Router* router);
-  void handle_dhcp_message(DHCP_Message message);
+  void handle_message(DHCP_Message message);
+  void set_router(Router* router);
 };
 
 #endif

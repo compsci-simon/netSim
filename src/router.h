@@ -34,12 +34,13 @@ public:
   Packet packet;
   Datagram datagram;
   DHCP_Message dhcp_message;
+  DHCP_Server dhcp_server;
 
   Router();
   bool accept_connections();
   void broadcast(char *msg);
   void send_frame(Frame frame);
-  void handleConnection(int clientfd);
+  void handleConnection();
   int get_ip_addr();
   void set_self_as_frame_source();
   void send_frame();

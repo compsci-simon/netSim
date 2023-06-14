@@ -38,22 +38,14 @@ in detail in RFC 2131 (https://www.rfc-editor.org/rfc/rfc2131).
 #ifndef _DHCP_H_
 #define _DHCP_H_
 
-#include "router.h"
+// #include "router.h"
 
 const unsigned char BOOT_REQUEST = 1;
 const unsigned char BOOT_REPLY = 2;
 const int DHCP_LENGTH = 1468;
 const int DHCP_OPTIONS_LENGTH = 1232;
 
-
-class DHCP_Server {
-  unsigned char available_ips[255] {0};
-  Router* router;
-public:
-  DHCP_Server(Router* router);
-  void handle_dhcp_message(DHCP_Message* message);
-};
-
+class Router;
 class DHCP_Message {
   unsigned char op;
   unsigned char htype = 1;
@@ -84,6 +76,15 @@ public:
   int get_siaddr();
   int get_giaddr();
   void to_bytes(unsigned char* buffer);
+};
+
+
+class DHCP_Server {
+  unsigned char available_ips[255] {0};
+  Router* router;
+public:
+  DHCP_Server(Router* router);
+  void handle_dhcp_message(DHCP_Message message);
 };
 
 #endif

@@ -146,10 +146,3 @@ void Router::send_frame() {
   frame.get_byte_string(send_buffer);
   send(clientfd, send_buffer, FRAME_SIZE, 0);
 }
-
-int main()
-{
-  Router router;
-  router.accept_connections();
-  return 0;
-}

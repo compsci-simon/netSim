@@ -48,7 +48,7 @@ class Datagram {
   unsigned char data[DATAGRAM_PAYLOAD_LENGTH];
 public:
   void set_payload(unsigned char* buffer);
-  void set_payload(DHCP_Message* dhcp_message);
+  void set_payload(DHCP_Message dhcp_message);
   void get_payload(unsigned char* buffer);
   void set_source_port(short int source_port);
   void set_destination_port(short int destination_port);

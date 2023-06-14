@@ -4,17 +4,17 @@ CFLAGS = -Wall -std=c++14 -g
 NODE_SRC = src/node.cpp
 ROUTER_SRC = src/router.cpp
 
-ROUTER_BIN = bin/router
-NODE_BIN = bin/node
+ROUTER_BIN = bin/server
+NODE_BIN = bin/client
 
 .PHONY: all clean
 
 all: $(ROUTER_BIN) $(NODE_BIN)
 
-$(ROUTER_BIN): $(ROUTER_SRC) src/datagram.cpp src/packet.cpp src/frame.cpp src/utils.cpp
+$(ROUTER_BIN): src/server.cpp src/dhcp.cpp $(ROUTER_SRC) src/packet.cpp src/datagram.cpp src/frame.cpp src/utils.cpp 
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(NODE_BIN): $(NODE_SRC) src/datagram.cpp src/packet.cpp src/frame.cpp src/utils.cpp
+$(NODE_BIN): src/client.cpp $(NODE_SRC) $(ROUTER_SRC) src/packet.cpp src/datagram.cpp src/frame.cpp src/dhcp.cpp src/utils.cpp 
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

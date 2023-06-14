@@ -44,8 +44,8 @@ This methods sets the payload of the datagram.
 Parameters:
   datagram - the datagram to set as payload bytes
 */
-void Datagram::set_payload(DHCP_Message* datagram) {
-  datagram->to_bytes(data);
+void Datagram::set_payload(DHCP_Message datagram) {
+  datagram.to_bytes(data);
 }
 
 /*

@@ -1,4 +1,5 @@
 #include "dhcp.h"
+#include "router.h"
 #include <iostream>
 
 DHCP_Server::DHCP_Server(Router* router) {
@@ -10,9 +11,9 @@ DHCP_Server::DHCP_Server(Router* router) {
   this->router = router;
 }
 
-void DHCP_Server::handle_dhcp_message(DHCP_Message* message) {
+void DHCP_Server::handle_dhcp_message(DHCP_Message message) {
 
-  if (message->is_broadcast() && message->get_ciaddr() == 0 && message->get_giaddr() == 0) {
+  if (message.is_broadcast() && message.get_ciaddr() == 0 && message.get_giaddr() == 0) {
     Router* r;
     /*
     If these conditions are met it means the message is a dhcp discover message for a client
@@ -31,8 +32,8 @@ void DHCP_Server::handle_dhcp_message(DHCP_Message* message) {
         std::cout << "Could not assign host an IP address" << std::endl;
         return;
       }
-      message->set_yiaddr(new_ip);
-      message->set_ciaddr(this->router->get_ip_addr());
+      message.set_yiaddr(new_ip);
+      message.set_ciaddr(this->router->get_ip_addr());
     }
     r = this->router;
     r->datagram.set_payload(message);

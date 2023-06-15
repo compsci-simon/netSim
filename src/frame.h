@@ -3,17 +3,13 @@
 #include <string>
 #include "packet.h"
 
-const int FRAME_PAYLOAD_SIZE = 1500;
-const int FRAME_SIZE = FRAME_PAYLOAD_SIZE + 26;
-const unsigned char ETHERNET_BROADCAST_ADDRESS[6] {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
-
 class Frame {
   unsigned char preamble[7] {0};
   unsigned char SFD = 0b10101011;
-  unsigned char source[6] {0};
-  unsigned char destination[6] {0};
+  long int source_address = 0;
+  long int destination_address = 0;
   short int length;
-  unsigned char payload[FRAME_PAYLOAD_SIZE] {0};
+  unsigned char payload[1500] {0};
   unsigned char CRC[4] {0};
 public:
   Frame() {};
@@ -21,8 +17,10 @@ public:
   void set_payload(unsigned char* new_payload);
   void set_payload(Packet packet);
   void get_payload(unsigned char* buffer);
-  void set_source(unsigned char* source);
-  void set_destination(unsigned char* destination);
+  void set_source(long int source);
+  void set_destination(long int destination);
+  long int get_source_address();
+  long int get_destination_address();
   void get_byte_string(unsigned char* buffer);
   void load_frame_from_string(unsigned char* frame_string);
   void load_packet(Packet* packet);

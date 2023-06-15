@@ -59,7 +59,7 @@ void Datagram::get_payload(unsigned char* buffer) {
 }
 
 void Datagram::unencapsulate_dhcp_message(DHCP_Message* dhcp_message) {
-  
+  dhcp_message->initialize_from_bytes(data);
 }
 
 /*

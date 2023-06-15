@@ -67,8 +67,6 @@ bool Router::accept_connections() {
 }
 
 void Router::handleConnection() {
-  unsigned char data[DATAGRAM_PAYLOAD_LENGTH] {0};
-
   memset(recv_buffer, 0, FRAME_SIZE);
   read(clientfd, recv_buffer, FRAME_SIZE);
 
@@ -76,8 +74,6 @@ void Router::handleConnection() {
   frame.load_packet(&packet);
 
   packet.load_datagram(&datagram);
-
-  datagram.get_payload(data);
 
   if (datagram.get_destination_port() == 67) {
     datagram.unencapsulate_dhcp_message(&dhcp_message);

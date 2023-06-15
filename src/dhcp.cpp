@@ -14,7 +14,6 @@ DHCP_Server::DHCP_Server(Router* router) {
 }
 
 void DHCP_Server::handle_message(DHCP_Message message) {
-
   if (message.is_broadcast() && message.get_ciaddr() == 0 && message.get_giaddr() == 0) {
     Router* r;
     /*

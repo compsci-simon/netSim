@@ -25,6 +25,7 @@ class Node {
   const char* name;
   bool listen;
   long int macAddress {0};
+  int ipAddress {0};
   Frame frame;
   Packet packet;
   Datagram datagram;
@@ -43,8 +44,10 @@ public:
   };
   int connect_to_router();
   void main_loop();
-  void obtain_ip_address();
+  void dhcp_discover();
+  void dhcp_request(DHCP_Message message);
   void disconnect();
+  void set_ip_address(int new_ip) { ipAddress = new_ip; };
 };
 
 #endif

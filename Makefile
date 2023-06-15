@@ -18,4 +18,4 @@ $(NODE_BIN): src/client.cpp $(NODE_SRC) $(ROUTER_SRC) src/packet.cpp src/datagra
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM /Users/simon/Desktop/netSim.log
+	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM bin/frame.dSYM bin/node.dSYM bin/router.dSYM /Users/simon/Desktop/netSim.log

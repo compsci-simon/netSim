@@ -63,11 +63,19 @@ void Node::obtain_ip_address() {
   packet.set_payload(datagram);
 
   frame.set_source(macAddress);
-  frame.set_destination((unsigned char*) ETHERNET_BROADCAST_ADDRESS);
+  frame.set_destination(0x00ffffffffffff);
   frame.set_payload(packet);
   frame.get_byte_string(send_buffer);
   
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
+  read(sockfd, recv_buffer, BUFFER_SIZE);
+
+  frame.load_frame_from_string(recv_buffer);
+  if (frame.get_destination_address() == 0x00ffffffffffff) {
+    std::cout << "Received a reply frame!" << std::endl;
+  } else {
+    std::cout << "Received a non reply frame..." << std::endl;
+  }
 }
 
 void Node::disconnect() {

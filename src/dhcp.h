@@ -61,6 +61,7 @@ class DHCP_Message {
   unsigned char sname[64] {0};
   unsigned char file[128] {0};
   unsigned char options[DHCP_OPTIONS_LENGTH] {0};
+  int option_index {0};
 public:
   DHCP_Message();
   void set_op(unsigned char operation);
@@ -68,13 +69,16 @@ public:
   void set_yiaddr(int yiaddr);
   void set_siaddr(int siaddr);
   void set_giaddr(int giaddr);
+  void set_xid(int id) { xid = id; }
   void set_broadcast();
   bool is_broadcast();
   int get_ciaddr();
   int get_yiaddr();
   int get_siaddr();
   int get_giaddr();
+  int get_xid() { return xid; }
   void to_bytes(unsigned char* buffer);
+  void set_option(unsigned char code, unsigned char length, unsigned char* data);
   void initialize_from_bytes(unsigned char* buffer);
 };
 

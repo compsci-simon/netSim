@@ -15,6 +15,7 @@ DHCP_Server::DHCP_Server(Router* router) {
 void DHCP_Server::handle_message(DHCP_Message message) {
   if (message.is_broadcast() && message.get_ciaddr() == 0 && message.get_giaddr() == 0) {
     Router* r;
+    int router_ip;
     /*
     If these conditions are met it means the message is a dhcp discover message for a client
     trying to obtain an IP address.
@@ -32,12 +33,21 @@ void DHCP_Server::handle_message(DHCP_Message message) {
         std::cout << "Could not assign host an IP address" << std::endl;
         return;
       }
-      message.set_yiaddr(new_ip);
-      message.set_ciaddr(this->router->get_ip_addr());
     }
+    message.set_yiaddr(new_ip);
+    router_ip = this->router->get_ip_addr();
+    message.set_ciaddr(router_ip);
+    unsigned char ip_array[4] = {
+      (unsigned char) ((router_ip >> 24) & 0xff),
+      (unsigned char) ((router_ip >> 16) & 0xff),
+      (unsigned char) ((router_ip >> 8) & 0xff),
+      (unsigned char) ((router_ip) & 0xff)
+    };
+    message.set_option(53, 4, ip_array);
     std::cout << "DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED." << std::endl;
     r = this->router;
     r->datagram.set_payload(message);
+
     r->datagram.set_source_port(67);
     r->datagram.set_destination_port(68);
 
@@ -195,3 +205,17 @@ void DHCP_Message::initialize_from_bytes(unsigned char* buffer) {
   memcpy(options, buffer, DHCP_OPTIONS_LENGTH);
 }
 
+/*
+This method is used for setting various options on a dhcp message.
+Parameters:
+  code - The option code.
+  length - The length of the option data.
+  data - A buffer with the option data.
+*/
+void DHCP_Message::set_option(unsigned char code, unsigned char length, unsigned char* data) {
+  options[option_index++] = code;
+  options[option_index++] = length;
+  for (int i = 0; i < length; i++) {
+    options[option_index++] = data[i];
+  }
+}

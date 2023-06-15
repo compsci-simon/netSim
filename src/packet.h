@@ -59,6 +59,8 @@ public:
   void set_payload(unsigned char* buffer);
   void set_payload(Datagram datagram);
   void get_payload(unsigned char* buffer);
+  int get_source() { return source_address; }
+  int get_destination() { return destination_address; }
   void to_byte_string(unsigned char* buffer);
   void load_packet_from_byte_string(unsigned char* byte_string);
   void load_datagram(Datagram* datagram);

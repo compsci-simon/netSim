@@ -38,14 +38,13 @@ in detail in RFC 2131 (https://www.rfc-editor.org/rfc/rfc2131).
 #ifndef _DHCP_H_
 #define _DHCP_H_
 
-// #include "router.h"
-
 const unsigned char BOOT_REQUEST = 1;
 const unsigned char BOOT_REPLY = 2;
 const int DHCP_LENGTH = 1468;
 const int DHCP_OPTIONS_LENGTH = 1232;
 
 class Router;
+
 class DHCP_Message {
   unsigned char op;
   unsigned char htype = 1;

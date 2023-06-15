@@ -2,12 +2,7 @@
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
 Router::Router() {
-  macAddress[0] = 0x01;
-  macAddress[1] = 0x23;
-  macAddress[2] = 0x34;
-  macAddress[3] = 0x45;
-  macAddress[4] = 0x56;
-  macAddress[5] = 0x67;
+  macAddress = 0x0001234455667;
   dhcp_server.set_router(this);
 }
 
@@ -67,8 +62,8 @@ bool Router::accept_connections() {
 }
 
 void Router::handleConnection() {
-  memset(recv_buffer, 0, FRAME_SIZE);
-  read(clientfd, recv_buffer, FRAME_SIZE);
+  memset(recv_buffer, 0, 1526);
+  read(clientfd, recv_buffer, 1526);
 
   frame.load_frame_from_string(recv_buffer);
   frame.load_packet(&packet);
@@ -140,5 +135,5 @@ frame.
 */
 void Router::send_frame() {
   frame.get_byte_string(send_buffer);
-  send(clientfd, send_buffer, FRAME_SIZE, 0);
+  send(clientfd, send_buffer, 1526, 0);
 }

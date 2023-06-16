@@ -74,6 +74,20 @@ void Router::handleConnection() {
     datagram.unencapsulate_dhcp_message(&dhcp_message);
     dhcp_server.handle_message(dhcp_message);
   }
+
+  memset(recv_buffer, 0, 1526);
+  read(clientfd, recv_buffer, 1526);
+
+  frame.load_frame_from_string(recv_buffer);
+  frame.load_packet(&packet);
+
+  packet.load_datagram(&datagram);
+
+  if (datagram.get_destination_port() == 67) {
+    datagram.unencapsulate_dhcp_message(&dhcp_message);
+    dhcp_server.handle_message(dhcp_message);
+  }
+  
   close(sockfd);
 }
 

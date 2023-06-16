@@ -79,12 +79,14 @@ public:
   int get_xid() { return xid; }
   void to_bytes(unsigned char* buffer);
   void set_option(unsigned char code, unsigned char length, unsigned char* data);
+  bool option_is_set(int opcode);
   void initialize_from_bytes(unsigned char* buffer);
 };
 
 
 class DHCP_Server {
   unsigned char available_ips[255] {0};
+  int last_xid = 0;
   Router* router;
 public:
   DHCP_Server();

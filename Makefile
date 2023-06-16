@@ -9,7 +9,7 @@ NODE_BIN = bin/client
 
 .PHONY: all clean
 
-all: $(ROUTER_BIN) $(NODE_BIN)
+all: clean $(ROUTER_BIN) $(NODE_BIN)
 
 $(ROUTER_BIN): src/server.cpp src/dhcp.cpp $(ROUTER_SRC) src/packet.cpp src/datagram.cpp src/frame.cpp src/utils.cpp 
 	$(CC) $(CFLAGS) -o $@ $^

@@ -17,3 +17,20 @@ void generate_mac_address(unsigned char* buffer) {
     }
   }
 }
+
+void bytes_to_bits(unsigned char* dest, unsigned char* source, ssize_t length) {
+  for (int i = 0; i < length; i++) {
+    for (int j = 7; j > 0; j--) {
+      dest[i*9 + j] = (source[i] >> j) & 1;
+    }
+  }
+}
+
+void bytes_to_bits(unsigned char* dest, long* source, ssize_t length) {
+  for (int i = 0; i < length; i++) {
+    for (int j = 0; j < 8; j++) {
+      dest[i*9 + j] = (source[i] >> (7 - j)) & 1;
+    }
+    dest[i*9 + 8] = ' ';
+  }
+}

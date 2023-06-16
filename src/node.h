@@ -13,7 +13,7 @@
 #include "dhcp.h"
 
 const int PORT = 12345;
-const int BUFFER_SIZE = 1600;
+const int BUFFER_SIZE = 1526;
 
 class Node {
   int sockfd;
@@ -46,6 +46,7 @@ public:
   void main_loop();
   void dhcp_discover();
   void dhcp_request(DHCP_Message message);
+  void dhcp_bind(DHCP_Message message);
   void disconnect();
   void set_ip_address(int new_ip) { ipAddress = new_ip; };
 };

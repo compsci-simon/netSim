@@ -8,7 +8,7 @@ int Node::sendMessageToServer(std::string message) {
 }
 
 void Node::receive_messages_from_server() {
-  memset(recv_buffer, 0, BUFFER_SIZE);
+  memset(recv_buffer, 0, 1526);
   if (read(sockfd, recv_buffer, BUFFER_SIZE) <= 0) {
     listen = false;
   }
@@ -69,18 +69,19 @@ void Node::dhcp_discover() {
   frame.set_payload(packet);
   frame.get_byte_string(send_buffer);
   
-  send(sockfd, send_buffer, BUFFER_SIZE, 0);
-  read(sockfd, recv_buffer, BUFFER_SIZE);
+  send(sockfd, send_buffer, 1526, 0);
+  read(sockfd, recv_buffer, 1526);
 
   frame.load_frame_from_string(recv_buffer);
   if (frame.get_destination_address() == 0x00ffffffffffff) {
-    std::cout << "Received a reply frame!" << std::endl;
     frame.load_packet(&packet);
     if (packet.get_destination() == 0xffffffff) {
       packet.load_datagram(&datagram);
       if (datagram.get_destination_port() == 68) {
         datagram.unencapsulate_dhcp_message(&dhcp_message);
-        if (dhcp_message.get_xid() == 1234567 && dhcp_message.is_broadcast()) {
+        if (dhcp_message.get_xid() == 1234567 
+            && dhcp_message.is_broadcast() && dhcp_message.option_is_set(53)) {
+          this->set_ip_address(dhcp_message.get_yiaddr());
           this->dhcp_request(dhcp_message);
         }
       }
@@ -99,7 +100,49 @@ Parameters:
   message - The DHCP Message received from the server.
 */
 void Node::dhcp_request(DHCP_Message message) {
+  std::cout << "IN REQUESTING STATE" << std::endl;
+  
+  datagram.set_source_port(68);
+  datagram.set_destination_port(67);
+  datagram.set_payload(message);
 
+  packet.set_source(0);
+  packet.set_destination(message.get_siaddr());
+  packet.set_payload(datagram);
+
+  frame.swap_source_and_dest();
+  frame.set_payload(packet);
+  frame.get_byte_string(send_buffer);
+  send(sockfd, send_buffer, 1526, 0);
+
+  memset(recv_buffer, 0, 1526);
+  read(sockfd, recv_buffer, BUFFER_SIZE);
+  frame.load_frame_from_string(recv_buffer);
+  if (frame.get_destination_address() == 0x00ffffffffffff 
+      || frame.get_destination_address() == this->macAddress) {
+    frame.load_packet(&packet);
+    if (packet.get_destination() == this->ipAddress) {
+      packet.load_datagram(&datagram);
+      if (datagram.get_destination_port() == 68) {
+        datagram.unencapsulate_dhcp_message(&dhcp_message);
+        if (dhcp_message.get_xid() == 1234567 
+            && dhcp_message.is_broadcast() && dhcp_message.option_is_set(53)) {
+          this->dhcp_bind(dhcp_message);
+        }
+      }
+    }
+  }
+  // this->dhcp_bind();
+}
+
+void Node::dhcp_bind(DHCP_Message message) {
+  unsigned char octets[4] {
+    (unsigned char) ((this->ipAddress >> 24) & 0xff),
+    (unsigned char) ((this->ipAddress >> 16) & 0xff),
+    (unsigned char) ((this->ipAddress >> 8) & 0xff),
+    (unsigned char) ((this->ipAddress) & 0xff),
+  };
+  std::cout << "IN BINDING STATE. IP address accepted: " << (int) octets[0] << "." << (int) octets[1] << "." << (int) octets[2] << "." << (int) octets[3] << std::endl;
 }
 
 void Node::disconnect() {

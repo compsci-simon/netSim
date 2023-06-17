@@ -40,7 +40,7 @@ public:
     this->host = host;
     this->name = name;
     // generate_mac_address(macAddress);
-    macAddress = 0x0012233445566778;
+    macAddress = 998877665544;
   };
   int connect_to_router();
   void main_loop();

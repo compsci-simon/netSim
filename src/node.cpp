@@ -73,7 +73,8 @@ void Node::dhcp_discover() {
   read(sockfd, recv_buffer, BUFFER_SIZE);
 
   frame.instantiate_from_bit_string(recv_buffer);
-  if (frame.get_destination_address() == 0x00ffffffffffff) {
+  if (frame.get_destination_address() == 0x00ffffffffffff ||
+      frame.get_destination_address() == this->macAddress) {
     frame.load_packet(&packet);
     if (packet.get_destination() == 0xffffffff) {
       packet.load_datagram(&datagram);
@@ -87,7 +88,7 @@ void Node::dhcp_discover() {
       }
     }
   } else {
-    std::cout << "Received a non reply frame..." << std::endl;
+    std::cout << "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address." << std::endl;
     return;
   }
 }

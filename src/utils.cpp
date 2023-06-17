@@ -2,6 +2,7 @@
 #include <iostream>
 
 void bytes_to_bits(unsigned char* dest, unsigned char* source, ssize_t length) {
+  memset(dest, 0, length * 9);
   for (int i = 0; i < length; i++) {
     for (int j = 0; j < 8; j++) {
       unsigned char a = (unsigned char) ((source[i] >> (7 - j)) & 1);
@@ -22,7 +23,8 @@ void bytes_to_bits(unsigned char* dest, long source, ssize_t length) {
   }
 }
 
-void bytes_to_bits(unsigned char* dest, int source, ssize_t length) {
+void bytes_to_bits(unsigned char* dest, int source) {
+  ssize_t length = 4;
   for (int i = 0; i < length; i++) {
     for (int j = 0; j < 8; j++) {
       unsigned char val = (unsigned char) (((source >> (8*(length - i - 1) + 7 - j)) & 1) + 48);
@@ -32,7 +34,8 @@ void bytes_to_bits(unsigned char* dest, int source, ssize_t length) {
   }
 }
 
-void bytes_to_bits(unsigned char* dest, short int source, ssize_t length) {
+void bytes_to_bits(unsigned char* dest, short int source) {
+  ssize_t length = 2;
   for (int i = 0; i < length; i++) {
     for (int j = 0; j < 8; j++) {
       unsigned char val = (unsigned char) (((source >> (8*(length - i - 1) + 7 - j)) & 1) + 48);

@@ -4,8 +4,8 @@
 
 void bytes_to_bits(unsigned char* dest, unsigned char* source, ssize_t length);
 void bytes_to_bits(unsigned char* dest, long source, ssize_t length);
-void bytes_to_bits(unsigned char* dest, int source, ssize_t length);
-void bytes_to_bits(unsigned char* dest, short int source, ssize_t length);
+void bytes_to_bits(unsigned char* dest, int source);
+void bytes_to_bits(unsigned char* dest, short int source);
 void bytes_to_bits(unsigned char* dest, unsigned char source);
 void bits_to_bytes(unsigned char* dest, unsigned char* source, ssize_t length);
 void bits_to_bytes(long* dest, unsigned char* source, ssize_t length);

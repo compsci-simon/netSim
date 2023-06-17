@@ -10,7 +10,7 @@ class Frame {
   long int destination_address = 0;
   short int length;
   unsigned char payload[1500] {0};
-  unsigned char CRC[4] {0};
+  int CRC {0};
 public:
   Frame() {};
   Frame(unsigned char* string);
@@ -23,6 +23,8 @@ public:
   long int get_destination_address();
   void get_byte_string(unsigned char* buffer);
   void load_frame_from_string(unsigned char* frame_string);
+  void get_bit_string(unsigned char* buffer);
+  void instantiate_from_bit_string(unsigned char* buffer);
   void load_packet(Packet* packet);
   void swap_source_and_dest();
 };

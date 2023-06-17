@@ -1,6 +1,7 @@
 #include <iostream>
 #include "frame.h"
 #include "packet.h"
+#include "utils.h"
 
 Frame::Frame(unsigned char* frame_string) {
   load_frame_from_string(frame_string);
@@ -55,7 +56,39 @@ void Frame::get_byte_string(unsigned char* buffer) {
   memcpy(buffer+14, &destination_address, 6);
   memcpy(buffer+20, &length, 2);
   memcpy(buffer+22, payload, 1500);
-  memcpy(buffer+1500+22, CRC, 4);
+  memcpy(buffer+1500+22, &CRC, 4);
+}
+
+void Frame::get_bit_string(unsigned char* buffer) {
+  bytes_to_bits(buffer, preamble, 7);
+  buffer += 7*9;
+  bytes_to_bits(buffer, &SFD, 1);
+  buffer += 1*9;
+  bytes_to_bits(buffer, source_address, 6);
+  buffer += 6*9;
+  bytes_to_bits(buffer, destination_address, 6);
+  buffer += 6*9;
+  bytes_to_bits(buffer, length, 2);
+  buffer += 2*9;
+  bytes_to_bits(buffer, payload, 1500);
+  buffer += 1500*9;
+  bytes_to_bits(buffer, CRC, 4);
+}
+
+void Frame::instantiate_from_bit_string(unsigned char* buffer) {
+  bits_to_bytes(preamble, buffer, 7);
+  buffer += 7*9;
+  bits_to_bytes(&SFD, buffer, 1);
+  buffer += 1*9;
+  bits_to_bytes(&source_address, buffer, 6);
+  buffer += 6*9;
+  bits_to_bytes(&destination_address, buffer, 6);
+  buffer += 6*9;
+  bits_to_bytes(&length, buffer);
+  buffer += 2*9;
+  bits_to_bytes(payload, buffer, 1500);
+  buffer += 1500*9;
+  bits_to_bytes(&CRC, buffer, 4);
 }
 
 void Frame::load_frame_from_string(unsigned char* frame_string) {
@@ -71,7 +104,7 @@ void Frame::load_frame_from_string(unsigned char* frame_string) {
   frame_string += 2;
   memcpy(payload, frame_string, 1500);
   frame_string += 1500;
-  memcpy(CRC, frame_string, 4);
+  memcpy(&CRC, frame_string, 4);
 }
 
 void Frame::load_packet(Packet* packet) {

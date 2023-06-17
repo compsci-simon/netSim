@@ -122,3 +122,32 @@ void Frame::swap_source_and_dest() {
   source_address = destination_address;
   destination_address = temp;
 }
+
+/*
+This method is used to convert the 48-bit mac address
+into a string that is user friendly.
+Parameters:
+  source - a boolean that determines whether or not to 
+    return the source or destination address.
+*/
+unsigned char* Frame::address_to_string(bool source) {
+  long* addr;
+  int pos = 0;
+  unsigned char octetVal;
+
+  memset(address_string, 0, 18);
+  if (source) {
+    addr = &source_address;
+  } else {
+    addr = &destination_address;
+  }
+  for (int byte = 0; byte < 6; byte++) {
+    octetVal = (unsigned char) (((*addr) >> ((5 - byte)*8)) & 0xff);
+    if (byte != 0) {
+      address_string[pos++] = ':';
+    }
+    byte_to_hex(address_string+(byte*3), octetVal);
+    pos += 2;
+  }
+  return address_string;
+}

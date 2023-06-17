@@ -11,6 +11,7 @@ class Frame {
   short int length;
   unsigned char payload[1500] {0};
   int CRC {0};
+  unsigned char address_string[18] {0};
 public:
   Frame() {};
   Frame(unsigned char* string);
@@ -27,5 +28,6 @@ public:
   void instantiate_from_bit_string(unsigned char* buffer);
   void load_packet(Packet* packet);
   void swap_source_and_dest();
+  unsigned char* address_to_string(bool source);
 };
 #endif

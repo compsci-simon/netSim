@@ -8,7 +8,7 @@ int Node::sendMessageToServer(std::string message) {
 }
 
 void Node::receive_messages_from_server() {
-  memset(recv_buffer, 0, 1526);
+  memset(recv_buffer, 0, BUFFER_SIZE);
   if (read(sockfd, recv_buffer, BUFFER_SIZE) <= 0) {
     listen = false;
   }
@@ -67,12 +67,12 @@ void Node::dhcp_discover() {
   frame.set_source(macAddress);
   frame.set_destination(0x00ffffffffffff);
   frame.set_payload(packet);
-  frame.get_byte_string(send_buffer);
+  frame.get_bit_string(send_buffer);
   
-  send(sockfd, send_buffer, 1526, 0);
-  read(sockfd, recv_buffer, 1526);
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
+  read(sockfd, recv_buffer, BUFFER_SIZE);
 
-  frame.load_frame_from_string(recv_buffer);
+  frame.instantiate_from_bit_string(recv_buffer);
   if (frame.get_destination_address() == 0x00ffffffffffff) {
     frame.load_packet(&packet);
     if (packet.get_destination() == 0xffffffff) {
@@ -112,12 +112,12 @@ void Node::dhcp_request(DHCP_Message message) {
 
   frame.swap_source_and_dest();
   frame.set_payload(packet);
-  frame.get_byte_string(send_buffer);
-  send(sockfd, send_buffer, 1526, 0);
+  frame.get_bit_string(send_buffer);
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
 
-  memset(recv_buffer, 0, 1526);
+  memset(recv_buffer, 0, BUFFER_SIZE);
   read(sockfd, recv_buffer, BUFFER_SIZE);
-  frame.load_frame_from_string(recv_buffer);
+  frame.instantiate_from_bit_string(recv_buffer);
   if (frame.get_destination_address() == 0x00ffffffffffff 
       || frame.get_destination_address() == this->macAddress) {
     frame.load_packet(&packet);
@@ -132,7 +132,6 @@ void Node::dhcp_request(DHCP_Message message) {
       }
     }
   }
-  // this->dhcp_bind();
 }
 
 void Node::dhcp_bind(DHCP_Message message) {

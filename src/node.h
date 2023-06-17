@@ -13,14 +13,14 @@
 #include "dhcp.h"
 
 const int PORT = 12345;
-const int BUFFER_SIZE = 1526;
+const int BUFFER_SIZE = 13734;
 
 class Node {
   int sockfd;
   int port;
   char* host;
-  unsigned char recv_buffer[1526];
-  unsigned char send_buffer[1526] {0};
+  unsigned char recv_buffer[BUFFER_SIZE] {0};
+  unsigned char send_buffer[BUFFER_SIZE] {0};
   struct sockaddr_in serverAddress;
   const char* name;
   bool listen;
@@ -40,7 +40,7 @@ public:
     this->host = host;
     this->name = name;
     // generate_mac_address(macAddress);
-    macAddress = 0x00ffffffffffffff;
+    macAddress = 0x0012233445566778;
   };
   int connect_to_router();
   void main_loop();

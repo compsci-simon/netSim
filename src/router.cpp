@@ -62,33 +62,33 @@ bool Router::accept_connections() {
 }
 
 void Router::handleConnection() {
-  memset(recv_buffer, 0, BUFFER_SIZE);
-  read(clientfd, recv_buffer, BUFFER_SIZE);
+  int bytesRead = 0;
+  while (true) {
+    memset(recv_buffer, 0, BUFFER_SIZE);
+    bytesRead = read(clientfd, recv_buffer, BUFFER_SIZE);
+    if (bytesRead <= 0) {
+      break;
+    }
 
-  frame.instantiate_from_bit_string(recv_buffer);
-  frame.load_packet(&packet);
-
-  packet.load_datagram(&datagram);
-
-  if (datagram.get_destination_port() == 67) {
-    datagram.unencapsulate_dhcp_message(&dhcp_message);
-    dhcp_server.handle_message(dhcp_message);
-  } else {
-    std::cerr << "datagram with wrong destination port received" << std::endl;
-    return;
-  }
-
-  memset(recv_buffer, 0, BUFFER_SIZE);
-  read(clientfd, recv_buffer, BUFFER_SIZE);
-
-  frame.instantiate_from_bit_string(recv_buffer);
-  frame.load_packet(&packet);
-
-  packet.load_datagram(&datagram);
-
-  if (datagram.get_destination_port() == 67) {
-    datagram.unencapsulate_dhcp_message(&dhcp_message);
-    dhcp_server.handle_message(dhcp_message);
+    frame.instantiate_from_bit_string(recv_buffer);
+    if (frame.get_destination_address() == 0xffffffffffff || frame.get_destination_address() == macAddress) {
+      frame.load_packet(&packet);
+      if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr) {
+        packet.load_datagram(&datagram);
+        if (datagram.get_destination_port() == 67) {
+          datagram.unencapsulate_dhcp_message(&dhcp_message);
+          dhcp_server.handle_message(dhcp_message);
+        } else {
+          std::cerr << "datagram received with destination port" << datagram.get_destination_port() << std::endl;
+          return;
+        }
+      } else {
+        std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << packet.address_to_string(false) << std::endl;
+        // Silently dismiss packet
+      }
+    } else {
+      // Silently dismiss frame
+    }
   }
   
   close(sockfd);

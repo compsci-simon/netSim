@@ -59,6 +59,7 @@ public:
   void set_source(int address);
   void set_payload(unsigned char* buffer);
   void set_payload(Datagram datagram);
+  void set_options(long int options) { this->options = options; }
   void get_payload(unsigned char* buffer);
   int get_source() { return source_address; }
   int get_destination() { return destination_address; }

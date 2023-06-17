@@ -60,9 +60,10 @@ void Node::dhcp_discover() {
   datagram.set_destination_port(67);
   datagram.set_payload(dhcp_message);
 
-  packet.set_destination(IP_BROADCAST);
+  packet.set_destination(0xffffffff);
   packet.set_source(0);
   packet.set_payload(datagram);
+  packet.set_options(1234);
 
   frame.set_source(macAddress);
   frame.set_destination(0x00ffffffffffff);

@@ -98,3 +98,22 @@ void bits_to_bytes(unsigned char *dest, unsigned char* source) {
     *dest = *dest | ((source[bit] - 48) << (7 - bit));
   }
 }
+
+/*
+This function is used to calculate the string representation
+of an octet in a mac address;
+*/
+void byte_to_hex(unsigned char* dest, unsigned char val) {
+  unsigned char half_byte_val = (val >> 4) & 0xf;
+  if (half_byte_val < 9) {
+    dest[0] = half_byte_val + '0';
+  } else {
+    dest[0] = (half_byte_val - 10) + 'a';
+  }
+  half_byte_val = val & 0xf;
+  if (half_byte_val < 9) {
+    dest[1] = half_byte_val + '0';
+  } else {
+    dest[1] = (half_byte_val - 10) + 'a';
+  }
+}

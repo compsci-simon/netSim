@@ -1,7 +1,13 @@
 #include "router.h"
 #include <iostream>
 
-DHCP_Server::DHCP_Server() {}
+DHCP_Server::DHCP_Server() {
+  for (int i = 0; i < 255; i++) {
+    available_ips[i] = 1;
+  }
+  available_ips[0] = 0;
+  available_ips[1] = 0;
+}
 
 DHCP_Server::DHCP_Server(Router* router) {
   for (int i = 0; i < 255; i++) {
@@ -34,10 +40,10 @@ void DHCP_Server::handle_message(DHCP_Message message) {
         available_ips[i] = 0;
         break;
       }
-      if (i == 256) {
-        std::cout << "Could not assign host an IP address" << std::endl;
-        return;
-      }
+    }
+    if ((new_ip & 0xff) == 0xff) {
+      std::cout << "Could not assign host an IP address" << std::endl;
+      return;
     }
     message.set_yiaddr(new_ip);
     router_ip = this->router->get_ip_addr();

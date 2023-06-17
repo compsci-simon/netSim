@@ -47,7 +47,7 @@ void DHCP_Server::handle_message(DHCP_Message message) {
     }
     message.set_yiaddr(new_ip);
     router_ip = this->router->get_ip_addr();
-    message.set_ciaddr(router_ip);
+    message.set_siaddr(router_ip);
     unsigned char ip_array[4] = {
       (unsigned char) ((router_ip >> 24) & 0xff),
       (unsigned char) ((router_ip >> 16) & 0xff),

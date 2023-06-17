@@ -14,7 +14,7 @@
 #include "datagram.h"
 
 const int PORT = 12345;
-const int BUFFER_SIZE = 1600;
+const int BUFFER_SIZE = 13734;
 
 class Router {
 private:
@@ -24,8 +24,8 @@ private:
   std::vector<int> threads;
   std::mutex mtx;
   static void handleConnection(int socketfd, Router *router);
-  unsigned char send_buffer[1526] {0};
-  unsigned char recv_buffer[1526] {0};
+  unsigned char send_buffer[BUFFER_SIZE] {0};
+  unsigned char recv_buffer[BUFFER_SIZE] {0};
   int ip_addr = 0b11000000'10100100'00000000'00000001;
   long int macAddress {0};
   int clientfd;

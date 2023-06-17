@@ -62,10 +62,10 @@ bool Router::accept_connections() {
 }
 
 void Router::handleConnection() {
-  memset(recv_buffer, 0, 1526);
-  read(clientfd, recv_buffer, 1526);
+  memset(recv_buffer, 0, BUFFER_SIZE);
+  read(clientfd, recv_buffer, BUFFER_SIZE);
 
-  frame.load_frame_from_string(recv_buffer);
+  frame.instantiate_from_bit_string(recv_buffer);
   frame.load_packet(&packet);
 
   packet.load_datagram(&datagram);
@@ -73,12 +73,15 @@ void Router::handleConnection() {
   if (datagram.get_destination_port() == 67) {
     datagram.unencapsulate_dhcp_message(&dhcp_message);
     dhcp_server.handle_message(dhcp_message);
+  } else {
+    std::cerr << "datagram with wrong destination port received" << std::endl;
+    return;
   }
 
-  memset(recv_buffer, 0, 1526);
-  read(clientfd, recv_buffer, 1526);
+  memset(recv_buffer, 0, BUFFER_SIZE);
+  read(clientfd, recv_buffer, BUFFER_SIZE);
 
-  frame.load_frame_from_string(recv_buffer);
+  frame.instantiate_from_bit_string(recv_buffer);
   frame.load_packet(&packet);
 
   packet.load_datagram(&datagram);
@@ -124,7 +127,7 @@ void Router::broadcast(char *msg) {
 }
 
 void Router::send_frame(Frame frame) {
-  frame.get_byte_string(send_buffer);
+  frame.get_bit_string(send_buffer);
 }
 
 /*
@@ -148,6 +151,6 @@ This method is used to send the router's
 frame.
 */
 void Router::send_frame() {
-  frame.get_byte_string(send_buffer);
-  send(clientfd, send_buffer, 1526, 0);
+  frame.get_bit_string(send_buffer);
+  send(clientfd, send_buffer, BUFFER_SIZE, 0);
 }

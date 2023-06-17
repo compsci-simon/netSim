@@ -147,3 +147,37 @@ Parameters:
 void Packet::load_datagram(Datagram* datagram) {
   datagram->instantiate_from_bytestring(data);
 }
+
+/*
+This method is used to get a string representation
+of a packet's address
+*/
+unsigned char* Packet::address_to_string(bool source) {
+  memset(address_string_repr, 0, 16);
+  int pos = 0;
+  int octetVal = 0;
+  int* addr;
+  if (source) {
+    addr = &source_address;
+  } else {
+    addr = &destination_address;
+  }
+  
+  for (int octet = 0; octet < 4; octet++) {
+    octetVal = ((*addr) >> ((3-octet)*8)) & 0xff;
+    if (octet != 0) {
+      address_string_repr[pos++] = '.';
+    }
+    if (octetVal > 99) {
+      address_string_repr[pos++] = (unsigned char) (octetVal / 100 + '0');
+      address_string_repr[pos++] = (unsigned char) ((octetVal % 100) / 10 + '0');
+      address_string_repr[pos++] = (unsigned char) (octetVal % 10 + '0');
+    } else if (octetVal > 9) {
+      address_string_repr[pos++] = (unsigned char) ((octetVal % 100) / 10 + '0');
+      address_string_repr[pos++] = (unsigned char) (octetVal % 10 + '0');
+    } else {
+      address_string_repr[pos++] = (unsigned char) (octetVal % 10 + '0');
+    }
+  }
+  return address_string_repr;
+}

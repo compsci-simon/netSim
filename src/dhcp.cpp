@@ -46,6 +46,7 @@ void DHCP_Server::handle_message(DHCP_Message message) {
     message.set_siaddr(router_ip);
     message.clear_options();
     message.set_option(53, 1, 2);
+
     r = this->router;
     r->datagram.set_payload(message);
 
@@ -55,9 +56,11 @@ void DHCP_Server::handle_message(DHCP_Message message) {
     r->packet.set_payload(r->datagram);
     r->packet.set_destination(IP_BROADCAST);
     r->packet.set_source(r->get_ip_addr());
+    r->packet.set_protocol(17);
 
     r->frame.set_payload(r->packet);
     r->frame.swap_source_and_dest();
+    r->frame.set_type(0x0800);
     r->set_self_as_frame_source();
     r->send_frame();
 
@@ -65,20 +68,23 @@ void DHCP_Server::handle_message(DHCP_Message message) {
             && message.option_is_set(53) && message.get_option(53) == 3) {
     // DHCP REQUEST
     std::cout << "DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED." << std::endl;
+
     r = this->router;
     message.clear_options();
     message.set_option(53, 1, 5);
-    r->datagram.set_payload(message);
 
+    r->datagram.set_payload(message);
     r->datagram.set_source_port(67);
     r->datagram.set_destination_port(68);
 
     r->packet.set_payload(r->datagram);
     r->packet.set_destination(message.get_yiaddr());
     r->packet.set_source(r->get_ip_addr());
+    r->packet.set_protocol(17);
 
     r->frame.set_payload(r->packet);
     r->frame.swap_source_and_dest();
+    r->frame.set_type(0x0800);
     r->set_self_as_frame_source();
     r->send_frame();
   }

@@ -1,3 +1,47 @@
+#ifndef _PACKET_H_
+#define _PACKET_H_
+
+class Datagram;
+
+const int PACKET_PAYLOAD_SIZE = 1472;
+const int PACKET_SIZE = 1500;
+const int IP_BROADCAST = 0b11111111'11111111'11111111'11111111;
+
+class Packet {
+  unsigned char V_IHL = 0b01000101;
+  unsigned char TOS = 0b00000000;
+  short int total_length = 0;
+  short int identification = 0;
+  short int flags_and_offset = 0;
+  unsigned char TTL = 123;
+  unsigned char protocol = 0;
+  short int header_checksum = 0;
+  int source_address = 0;
+  int destination_address = 0;
+  long int options = 0;
+  unsigned char data[PACKET_PAYLOAD_SIZE];
+  char address_string[17];
+public:
+  Packet();
+  void set_destination(const char* address);
+  void set_destination(int address);
+  void set_source(int address);
+  void set_payload(unsigned char* buffer);
+  void set_payload(Datagram datagram);
+  void set_options(long int options) { this->options = options; }
+  void set_protocol(int proto) { protocol = proto; }
+  int get_protocol() { return protocol; }
+  void get_payload(unsigned char* buffer);
+  int get_source() { return source_address; }
+  int get_destination() { return destination_address; }
+  void to_byte_string(unsigned char* buffer);
+  void load_packet_from_byte_string(unsigned char* byte_string);
+  void load_datagram(Datagram* datagram);
+  char* address_to_string(bool source);
+  static void address_to_string(int address, char* buffer);
+};
+#endif
+
 // IP packet specification. see RFC 791 (https://www.rfc-editor.org/rfc/rfc791)
 // for more information.
 // Version (4 bits) - The version indicates the format of the internet header. We use version 4
@@ -29,44 +73,3 @@
 //    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 // For now we will avoid packet fragmentation and set the payload size to
 // a fixed 1476 bytes. 24
-
-#ifndef _PACKET_H_
-#define _PACKET_H_
-#include "datagram.h"
-
-const int PACKET_PAYLOAD_SIZE = 1472;
-const int PACKET_SIZE = 1500;
-const int IP_BROADCAST = 0b11111111'11111111'11111111'11111111;
-
-class Packet {
-  unsigned char V_IHL = 0b01000101;
-  unsigned char TOS = 0b00000000;
-  short int total_length = 0;
-  short int identification = 0;
-  short int flags_and_offset = 0;
-  unsigned char TTL = 123;
-  unsigned char protocol = 1;
-  short int header_checksum = 0;
-  int source_address = 0;
-  int destination_address = 0;
-  long int options = 0;
-  unsigned char data[PACKET_PAYLOAD_SIZE];
-  char address_string[17];
-public:
-  Packet();
-  void set_destination(const char* address);
-  void set_destination(int address);
-  void set_source(int address);
-  void set_payload(unsigned char* buffer);
-  void set_payload(Datagram datagram);
-  void set_options(long int options) { this->options = options; }
-  void get_payload(unsigned char* buffer);
-  int get_source() { return source_address; }
-  int get_destination() { return destination_address; }
-  void to_byte_string(unsigned char* buffer);
-  void load_packet_from_byte_string(unsigned char* byte_string);
-  void load_datagram(Datagram* datagram);
-  char* address_to_string(bool source);
-  static void address_to_string(int address, char* buffer);
-};
-#endif

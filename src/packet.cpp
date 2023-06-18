@@ -1,6 +1,7 @@
 #include <iostream>
 #include <string>
 #include "packet.h"
+#include "datagram.h"
 
 Packet::Packet() {
   memset(data, 0, PACKET_PAYLOAD_SIZE);

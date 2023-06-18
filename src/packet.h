@@ -51,7 +51,7 @@ class Packet {
   int destination_address = 0;
   long int options = 0;
   unsigned char data[PACKET_PAYLOAD_SIZE];
-  unsigned char address_string_repr[16] {0};
+  char address_string[17];
 public:
   Packet();
   void set_destination(const char* address);
@@ -66,6 +66,7 @@ public:
   void to_byte_string(unsigned char* buffer);
   void load_packet_from_byte_string(unsigned char* byte_string);
   void load_datagram(Datagram* datagram);
-  unsigned char* address_to_string(bool source);
+  char* address_to_string(bool source);
+  static void address_to_string(int address, char* buffer);
 };
 #endif

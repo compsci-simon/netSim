@@ -148,36 +148,38 @@ void Packet::load_datagram(Datagram* datagram) {
   datagram->instantiate_from_bytestring(data);
 }
 
+char* Packet::address_to_string(bool source) {
+  memset(address_string, 0, 17);
+  if (source) {
+    Packet::address_to_string(this->get_source(), address_string);
+  } else {
+    Packet::address_to_string(this->get_destination(), address_string);
+  }
+  return address_string;
+}
+
 /*
 This method is used to get a string representation
 of a packet's address
 */
-unsigned char* Packet::address_to_string(bool source) {
-  memset(address_string_repr, 0, 16);
+void Packet::address_to_string(int address, char* buffer) {
   int pos = 0;
   int octetVal = 0;
-  int* addr;
-  if (source) {
-    addr = &source_address;
-  } else {
-    addr = &destination_address;
-  }
   
   for (int octet = 0; octet < 4; octet++) {
-    octetVal = ((*addr) >> ((3-octet)*8)) & 0xff;
+    octetVal = (address >> ((3-octet)*8)) & 0xff;
     if (octet != 0) {
-      address_string_repr[pos++] = '.';
+      buffer[pos++] = '.';
     }
     if (octetVal > 99) {
-      address_string_repr[pos++] = (unsigned char) (octetVal / 100 + '0');
-      address_string_repr[pos++] = (unsigned char) ((octetVal % 100) / 10 + '0');
-      address_string_repr[pos++] = (unsigned char) (octetVal % 10 + '0');
+      buffer[pos++] = (unsigned char) (octetVal / 100 + '0');
+      buffer[pos++] = (unsigned char) ((octetVal % 100) / 10 + '0');
+      buffer[pos++] = (unsigned char) (octetVal % 10 + '0');
     } else if (octetVal > 9) {
-      address_string_repr[pos++] = (unsigned char) ((octetVal % 100) / 10 + '0');
-      address_string_repr[pos++] = (unsigned char) (octetVal % 10 + '0');
+      buffer[pos++] = (unsigned char) ((octetVal % 100) / 10 + '0');
+      buffer[pos++] = (unsigned char) (octetVal % 10 + '0');
     } else {
-      address_string_repr[pos++] = (unsigned char) (octetVal % 10 + '0');
+      buffer[pos++] = (unsigned char) (octetVal % 10 + '0');
     }
   }
-  return address_string_repr;
 }

@@ -1,6 +1,7 @@
 #include <iostream>
 #include "frame.h"
 #include "packet.h"
+#include "arp.h"
 #include "utils.h"
 
 Frame::Frame(unsigned char* frame_string) {
@@ -14,6 +15,21 @@ void Frame::set_payload(unsigned char* new_payload) {
 
 void Frame::set_payload(Packet packet) {
   packet.to_byte_string(payload);
+  type = 0x0800;
+}
+
+/*
+Used to multiplex an arp query.
+Parameters:
+  query - The ARP query to multiplex.
+*/
+void Frame::multiplex(Arp query) {
+  query.get_byte_string(payload);
+  type = 0x0806;
+}
+
+void Frame::demultiplex(Arp* query) {
+  query->instantiate_from_byte_string(payload);
 }
 
 /*
@@ -54,7 +70,7 @@ void Frame::get_byte_string(unsigned char* buffer) {
   memcpy(buffer+7, &SFD, 1);
   memcpy(buffer+8, &source_address, 6);
   memcpy(buffer+14, &destination_address, 6);
-  memcpy(buffer+20, &length, 2);
+  memcpy(buffer+20, &type, 2);
   memcpy(buffer+22, payload, 1500);
   memcpy(buffer+1500+22, &CRC, 4);
 }
@@ -68,7 +84,7 @@ void Frame::get_bit_string(unsigned char* buffer) {
   buffer += 6*9;
   bytes_to_bits(buffer, destination_address, 6);
   buffer += 6*9;
-  bytes_to_bits(buffer, length, 2);
+  bytes_to_bits(buffer, type, 2);
   buffer += 2*9;
   bytes_to_bits(buffer, payload, 1500);
   buffer += 1500*9;
@@ -84,7 +100,7 @@ void Frame::instantiate_from_bit_string(unsigned char* buffer) {
   buffer += 6*9;
   bits_to_bytes(&destination_address, buffer, 6);
   buffer += 6*9;
-  bits_to_bytes(&length, buffer);
+  bits_to_bytes(&type, buffer);
   buffer += 2*9;
   bits_to_bytes(payload, buffer, 1500);
   buffer += 1500*9;
@@ -100,7 +116,7 @@ void Frame::load_frame_from_string(unsigned char* frame_string) {
   frame_string += 6;
   memcpy(&destination_address, frame_string, 6);
   frame_string += 6;
-  memcpy(&length, frame_string, 2);
+  memcpy(&type, frame_string, 2);
   frame_string += 2;
   memcpy(payload, frame_string, 1500);
   frame_string += 1500;
@@ -148,6 +164,26 @@ unsigned char* Frame::address_to_string(bool source) {
     }
     byte_to_hex(address_string+(byte*3), octetVal);
     pos += 2;
+  }
+  return address_string;
+}
+
+/*
+This method is used to get a string representation
+of a frame's type.
+*/
+unsigned char* Frame::get_type_string() {
+  memset(address_string, 0, 6);
+  address_string[0] = '0';
+  address_string[1] = 'x';
+  unsigned char val = 0;
+  for (int i = 0; i < 4; i++) {
+    val = (type >> ((3 - i)*8)) & 0xf;
+    if (val < 9) {
+      address_string[2 + i] = val + '0';
+    } else {
+      address_string[2 + i] = val - 10 + 'a';
+    }
   }
   return address_string;
 }

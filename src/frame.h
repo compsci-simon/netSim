@@ -1,14 +1,16 @@
 #ifndef _FRAME_H_
 #define _FRAME_H_
 #include <string>
-#include "packet.h"
+
+class Arp;
+class Packet;
 
 class Frame {
-  unsigned char preamble[7] {0};
+  unsigned char preamble[7] { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
   unsigned char SFD = 0b10101011;
   long int source_address = 0;
   long int destination_address = 0;
-  short int length;
+  short int type;
   unsigned char payload[1500] {0};
   int CRC {0};
   unsigned char address_string[18] {0};
@@ -29,5 +31,10 @@ public:
   void load_packet(Packet* packet);
   void swap_source_and_dest();
   unsigned char* address_to_string(bool source);
+  short int get_type() { return type; }
+  unsigned char* get_type_string();
+  void set_type(short int t) { type = t; }
+  void multiplex(Arp query);
+  void demultiplex(Arp* query);
 };
 #endif

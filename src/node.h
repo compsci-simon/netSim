@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <string>
 #include <thread>
+#include <vector>
 #include "frame.h"
 #include "packet.h"
 #include "datagram.h"
@@ -27,6 +28,7 @@ class Node {
   long int macAddress {0};
   int ipAddress {0};
   std::thread receive_thread;
+  std::vector<std::vector<long>> arp_table;
   Frame frame;
   Packet packet;
   Datagram datagram;
@@ -51,6 +53,9 @@ public:
   void set_ip_address(int new_ip) { ipAddress = new_ip; };
   void start_listen_thread();
   void handle_frame();
+  void handle_packet(Packet packet);
+  void handle_datagram(Datagram datagram);
+  void process_dhcp_message(DHCP_Message message);
 };
 
 #endif

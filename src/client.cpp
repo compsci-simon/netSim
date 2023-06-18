@@ -8,6 +8,7 @@ int main(int argc, char* argv[]) {
   // }
   Node node(PORT, (char *)"localhost", "simon");
   node.connect_to_router();
+  node.start_listen_thread();
   node.dhcp_discover();
   node.disconnect();
   return 0;

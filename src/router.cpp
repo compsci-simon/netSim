@@ -83,10 +83,13 @@ void Router::handleConnection() {
           return;
         }
       } else {
-        std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << packet.address_to_string(false) << std::endl;
+        char buffer[17] {0};
+        Packet::address_to_string(packet.get_destination(), buffer);
+        std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << buffer << std::endl;
         // Silently dismiss packet
       }
     } else {
+      std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Frame destination address = " << frame.address_to_string(false) << std::endl;
       // Silently dismiss frame
     }
   }

@@ -14,13 +14,6 @@ void Node::receive_messages_from_server() {
   }
 }
 
-void Node::echo_messages_received() {
-  while (listen) {
-    receive_messages_from_server();
-    std::cout << recv_buffer << std::endl;
-  }
-}
-
 int Node::connect_to_router() {
   // Create socket
   sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -51,6 +44,7 @@ void Node::dhcp_discover() {
 
   // DHCP DISCOVER
   dhcp_message.set_op(1);
+  dhcp_message.set_option(53, 1, 1);
   dhcp_message.set_ciaddr(0);
   dhcp_message.set_giaddr(0);
   dhcp_message.set_broadcast();
@@ -71,27 +65,6 @@ void Node::dhcp_discover() {
   frame.get_bit_string(send_buffer);
   
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
-  read(sockfd, recv_buffer, BUFFER_SIZE);
-
-  frame.instantiate_from_bit_string(recv_buffer);
-  if (frame.get_destination_address() == 0x00ffffffffffff ||
-      frame.get_destination_address() == this->macAddress) {
-    frame.load_packet(&packet);
-    if (packet.get_destination() == 0xffffffff) {
-      packet.load_datagram(&datagram);
-      if (datagram.get_destination_port() == 68) {
-        datagram.unencapsulate_dhcp_message(&dhcp_message);
-        if (dhcp_message.get_xid() == 1234567 
-            && dhcp_message.is_broadcast() && dhcp_message.option_is_set(53)) {
-          this->set_ip_address(dhcp_message.get_yiaddr());
-          this->dhcp_request(dhcp_message);
-        }
-      }
-    }
-  } else {
-    std::cout << "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address." << std::endl;
-    return;
-  }
 }
 
 /*
@@ -103,7 +76,8 @@ Parameters:
 */
 void Node::dhcp_request(DHCP_Message message) {
   std::cout << "IN REQUESTING STATE" << std::endl;
-  
+  message.clear_options();
+  message.set_option(53, 1, 3);
   datagram.set_source_port(68);
   datagram.set_destination_port(67);
   datagram.set_payload(message);
@@ -116,51 +90,84 @@ void Node::dhcp_request(DHCP_Message message) {
   frame.set_payload(packet);
   frame.get_bit_string(send_buffer);
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
-
-  memset(recv_buffer, 0, BUFFER_SIZE);
-  read(sockfd, recv_buffer, BUFFER_SIZE);
-  frame.instantiate_from_bit_string(recv_buffer);
-  if (frame.get_destination_address() == 0x00ffffffffffff 
-      || frame.get_destination_address() == this->macAddress) {
-    frame.load_packet(&packet);
-    if (packet.get_destination() == this->ipAddress) {
-      packet.load_datagram(&datagram);
-      if (datagram.get_destination_port() == 68) {
-        datagram.unencapsulate_dhcp_message(&dhcp_message);
-        if (dhcp_message.get_xid() == 1234567 
-            && dhcp_message.is_broadcast() && dhcp_message.option_is_set(53)) {
-          this->dhcp_bind(dhcp_message);
-        }
-      }
-    }
-  }
 }
 
 void Node::dhcp_bind(DHCP_Message message) {
-  unsigned char octets[4] {
-    (unsigned char) ((this->ipAddress >> 24) & 0xff),
-    (unsigned char) ((this->ipAddress >> 16) & 0xff),
-    (unsigned char) ((this->ipAddress >> 8) & 0xff),
-    (unsigned char) ((this->ipAddress) & 0xff),
-  };
-  std::cout << "IN BINDING STATE. IP address accepted: " << (int) octets[0] << "." << (int) octets[1] << "." << (int) octets[2] << "." << (int) octets[3] << std::endl;
+  char buffer[17] {0};
+  Packet::address_to_string(this->ipAddress, buffer);
+  std::cout << "IN BINDING STATE. IP address accepted: " << buffer << std::endl;
+  listen = false;
+}
+
+/*
+This method is used for address resolution, i.e.
+to determine what mac address is assosciated with a given 
+IP address.
+*/
+void Node::arp(int address) {
+
 }
 
 void Node::disconnect() {
+  receive_thread.join();
   close(sockfd);
 }
 
-void Node::main_loop() {
-    std::string msg;
-    std::thread thread(&Node::echo_messages_received, this);
-    listen = true;
-    while (listen) {
-      std::getline(std::cin, msg);
-      sendMessageToServer(msg);
-      if (msg == "quit") {
-        listen = false;
-        break;
-      }
+/*
+This method is used to start a thread that will listen
+for and process incoming frames.
+*/
+void Node::start_listen_thread() {
+  receive_thread = std::thread(&Node::handle_frame, this);
+}
+
+/*
+This method is started in a child thread. The
+sole responsibility of this method is to load an incoming
+frame from the recv_buffer and decide how to handle the frame.
+*/
+void Node::handle_frame() {
+  int bytes_read = 0;
+  listen = true;
+  while (listen) {
+    memset(recv_buffer, 0, BUFFER_SIZE);
+    bytes_read = read(sockfd, recv_buffer, BUFFER_SIZE);
+    if (bytes_read <= 0) {
+      listen = false;
+      std::cerr << "Connection broken" << std::endl;
+      break;
     }
-    thread.join();
+
+    frame.instantiate_from_bit_string(recv_buffer);
+    if (frame.get_destination_address() == 0x00ffffffffffff ||
+        frame.get_destination_address() == this->macAddress) {
+      frame.load_packet(&packet);
+      if (packet.get_destination() == 0xffffffff 
+        || packet.get_destination() == this->ipAddress ) {
+        packet.load_datagram(&datagram);
+        if (datagram.get_destination_port() == 68) {
+          datagram.unencapsulate_dhcp_message(&dhcp_message);
+          if (dhcp_message.get_xid() == 1234567 
+              && dhcp_message.is_broadcast() && dhcp_message.option_is_set(53)) {
+            if (dhcp_message.get_option(53) == 2) {
+              // DHCP Offer
+              this->set_ip_address(dhcp_message.get_yiaddr());
+              this->dhcp_request(dhcp_message);
+            } else if (dhcp_message.get_option(53) == 5) {
+              // DHCP ACK
+              this->dhcp_bind(dhcp_message);
+            }
+          } else {
+            std::cerr << "dhcp_message.option_is_set(53) = " << dhcp_message.option_is_set(53) << std::endl;
+            std::cerr << "dhcp_message.get_option(53) = " << dhcp_message.get_option(53) << std::endl;
+            listen = false;
+            return;
+          }
+        }
+      }
+    } else {
+      std::cout << "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address. Frame address = " << frame.address_to_string(false) << std::endl;
+      return;
+    }
   }
+}

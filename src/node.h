@@ -26,6 +26,7 @@ class Node {
   bool listen;
   long int macAddress {0};
   int ipAddress {0};
+  std::thread receive_thread;
   Frame frame;
   Packet packet;
   Datagram datagram;
@@ -33,7 +34,6 @@ class Node {
 
   int sendMessageToServer(std::string message);
   void receive_messages_from_server();
-  void echo_messages_received();
 public:
   Node(int port, char *host, const char* name) {
     this->port = port;
@@ -43,12 +43,14 @@ public:
     macAddress = 998877665544;
   };
   int connect_to_router();
-  void main_loop();
   void dhcp_discover();
   void dhcp_request(DHCP_Message message);
   void dhcp_bind(DHCP_Message message);
+  void arp(int address);
   void disconnect();
   void set_ip_address(int new_ip) { ipAddress = new_ip; };
+  void start_listen_thread();
+  void handle_frame();
 };
 
 #endif

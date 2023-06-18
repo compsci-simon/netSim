@@ -78,8 +78,11 @@ public:
   int get_giaddr();
   int get_xid() { return xid; }
   void to_bytes(unsigned char* buffer);
+  void clear_options();
   void set_option(unsigned char code, unsigned char length, unsigned char* data);
+  void set_option(int code, int length, int data);
   bool option_is_set(int opcode);
+  int get_option(int optcode);
   void initialize_from_bytes(unsigned char* buffer);
 };
 

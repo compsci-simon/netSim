@@ -21,16 +21,12 @@ DHCP_Server::DHCP_Server(Router* router) {
 void DHCP_Server::handle_message(DHCP_Message message) {
   Router* r;
   if (message.is_broadcast() && message.get_ciaddr() == 0 
-      && message.get_giaddr() == 0 && message.get_xid() != last_xid) {
-    // DHCP OFFER
-    /*
-    If these conditions are met it means the message is a dhcp discover message for a client
-    trying to obtain an IP address.
-    */
-    // 192.168.0.0
+      && message.get_giaddr() == 0 && message.get_xid() != last_xid
+      && message.option_is_set(53) && message.get_option(53) == 1) {
+    // DHCP DISCOVER
     std::cout << "DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED." << std::endl;
     int router_ip;
-    int base_ip = 0b11000000'10100100'00000000'00000000;
+    int base_ip = 0b11000000'10101000'00000000'00000000;
     int new_ip = base_ip;
 
     last_xid = message.get_xid();
@@ -48,13 +44,8 @@ void DHCP_Server::handle_message(DHCP_Message message) {
     message.set_yiaddr(new_ip);
     router_ip = this->router->get_ip_addr();
     message.set_siaddr(router_ip);
-    unsigned char ip_array[4] = {
-      (unsigned char) ((router_ip >> 24) & 0xff),
-      (unsigned char) ((router_ip >> 16) & 0xff),
-      (unsigned char) ((router_ip >> 8) & 0xff),
-      (unsigned char) ((router_ip) & 0xff)
-    };
-    message.set_option(53, 4, ip_array);
+    message.clear_options();
+    message.set_option(53, 1, 2);
     r = this->router;
     r->datagram.set_payload(message);
 
@@ -70,10 +61,13 @@ void DHCP_Server::handle_message(DHCP_Message message) {
     r->set_self_as_frame_source();
     r->send_frame();
 
-  } else if (message.is_broadcast() && message.get_xid() == last_xid) {
-    // DHCP ACK
+  } else if (message.is_broadcast() && message.get_xid() == last_xid 
+            && message.option_is_set(53) && message.get_option(53) == 3) {
+    // DHCP REQUEST
     std::cout << "DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED." << std::endl;
     r = this->router;
+    message.clear_options();
+    message.set_option(53, 1, 5);
     r->datagram.set_payload(message);
 
     r->datagram.set_source_port(67);
@@ -234,6 +228,13 @@ void DHCP_Message::initialize_from_bytes(unsigned char* buffer) {
 }
 
 /*
+When a message is received, the options need to be cleared before new options can be set.
+*/
+void DHCP_Message::clear_options() {
+  memset(options, 0, DHCP_OPTIONS_LENGTH);
+  option_index = 0;
+}
+/*
 This method is used for setting various options on a dhcp message.
 Parameters:
   code - The option code.
@@ -249,6 +250,20 @@ void DHCP_Message::set_option(unsigned char code, unsigned char length, unsigned
 }
 
 /*
+This method is used for setting various options on a dhcp message.
+Parameters:
+  code - The option code.
+  length - The length of the option data.
+  data - An int with the option data.
+*/
+void DHCP_Message::set_option(int code, int length, int data) {
+  options[option_index++] = code;
+  options[option_index++] = length;
+  memcpy(options + option_index, &data, length);
+  option_index += length;
+}
+
+/*
 This method is used to check if an option is set.
 Sometimes we must just check for the presence of
 an option and the actual value is not relevant
@@ -257,13 +272,32 @@ Parameters:
   opcode - The option code to check for the existence of.
 */
 bool DHCP_Message::option_is_set(int opcode) {
-  option_index = 0;
-  while (option_index < DHCP_OPTIONS_LENGTH) {
-    if (options[option_index] == opcode) {
+  int index = 0;
+  unsigned char current_code = 0;
+  while (index < DHCP_OPTIONS_LENGTH) {
+    current_code = options[index];
+    if (current_code == opcode) {
       return true;
     }
-    option_index++;
-    option_index += options[option_index] + 1;
+    index++;
+    index += options[index] + 1;
   }
   return false;
+}
+
+int DHCP_Message::get_option(int opcode) {
+  option_index = 0;
+  int returnVal = 0;
+  while (option_index < DHCP_OPTIONS_LENGTH) {
+    if (options[option_index++] == opcode) {
+      if (options[option_index] > 4 || options[option_index] < 1) {
+        std::cerr << "Found the specified option, but the length of the data was " << options[option_index] << std::endl;
+        return 0;
+      }
+      memcpy(&returnVal, options+option_index+1, options[option_index]);
+      return returnVal;
+    }
+    option_index += options[option_index] + 1;
+  }
+  return 0;
 }

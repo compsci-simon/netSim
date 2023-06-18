@@ -71,30 +71,52 @@ void Router::handleConnection() {
     }
 
     frame.instantiate_from_bit_string(recv_buffer);
-    if (frame.get_destination_address() == 0xffffffffffff || frame.get_destination_address() == macAddress) {
-      frame.load_packet(&packet);
-      if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr) {
-        packet.load_datagram(&datagram);
-        if (datagram.get_destination_port() == 67) {
-          datagram.unencapsulate_dhcp_message(&dhcp_message);
-          dhcp_server.handle_message(dhcp_message);
-        } else {
-          std::cerr << "datagram received with destination port" << datagram.get_destination_port() << std::endl;
-          return;
-        }
-      } else {
-        char buffer[17] {0};
-        Packet::address_to_string(packet.get_destination(), buffer);
-        std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << buffer << std::endl;
-        // Silently dismiss packet
-      }
-    } else {
-      std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Frame destination address = " << frame.address_to_string(false) << std::endl;
-      // Silently dismiss frame
-    }
+    process_frame(frame);
   }
   
   close(sockfd);
+}
+
+void Router::process_frame(Frame frame) {
+  if (frame.get_destination_address() == 0xffffffffffff || frame.get_destination_address() == macAddress) {
+    if (frame.get_type() == 0x0800) {
+      // Process IP Packet
+      frame.load_packet(&packet);
+      process_packet(packet);
+    } else if (frame.get_type() == 0x0806) {
+      // Process ARP Query
+    } else {
+      std::cerr << "Received frame with unknow protocol " << frame.get_type_string() << std::endl;
+    }
+  } else {
+    std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Frame destination address = " << frame.address_to_string(false) << std::endl;
+  }
+}
+
+void Router::process_packet(Packet packet) {
+  if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr) {
+    if (packet.get_protocol() == 17) {
+      packet.load_datagram(&datagram);
+      process_datagram(datagram);
+    } else {
+      std::cerr << "Received packet with unknown destination protocol " << packet.get_protocol() << std::endl;
+    }
+  } else {
+    char buffer[17] {0};
+    Packet::address_to_string(packet.get_destination(), buffer);
+    std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << buffer << std::endl;
+    // Silently dismiss packet
+  }
+}
+
+void Router::process_datagram(Datagram datagram) {
+  if (datagram.get_destination_port() == 67) {
+    datagram.unencapsulate_dhcp_message(&dhcp_message);
+    dhcp_server.handle_message(dhcp_message);
+  } else {
+    std::cerr << "datagram received with unknown destination port" << datagram.get_destination_port() << std::endl;
+    return;
+  }
 }
 
 void Router::handleConnection(int socketfd, Router *router) {

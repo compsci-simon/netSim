@@ -44,6 +44,9 @@ public:
   int get_ip_addr();
   void set_self_as_frame_source();
   void send_frame();
+  void process_frame(Frame frame);
+  void process_packet(Packet packet);
+  void process_datagram(Datagram datagram);
 };
 
 #endif

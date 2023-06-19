@@ -11,10 +11,10 @@ NODE_BIN = bin/client
 
 all: clean $(ROUTER_BIN) $(NODE_BIN)
 
-$(ROUTER_BIN): src/server.cpp src/dhcp.cpp $(ROUTER_SRC) src/packet.cpp src/datagram.cpp src/frame.cpp src/utils.cpp src/arp.cpp
+$(ROUTER_BIN): src/server.cpp src/dhcp.cpp $(ROUTER_SRC) src/ip.cpp src/datagram.cpp src/frame.cpp src/utils.cpp src/arp.cpp
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(NODE_BIN): src/client.cpp $(NODE_SRC) $(ROUTER_SRC) src/packet.cpp src/datagram.cpp src/frame.cpp src/dhcp.cpp src/utils.cpp src/arp.cpp
+$(NODE_BIN): src/client.cpp $(NODE_SRC) $(ROUTER_SRC) src/ip.cpp src/datagram.cpp src/frame.cpp src/dhcp.cpp src/utils.cpp src/arp.cpp
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:

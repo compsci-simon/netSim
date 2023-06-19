@@ -1,13 +1,14 @@
 #include <iostream>
 #include <string>
-#include "packet.h"
+#include "ip.h"
+#include "icmp.h"
 #include "datagram.h"
 
-Packet::Packet() {
-  memset(data, 0, PACKET_PAYLOAD_SIZE);
+IP::IP() {
+  memset(data, 0, IP_PAYLOAD_SIZE);
 }
 
-void Packet::set_destination(const char* address) {
+void IP::set_destination(const char* address) {
   destination_address = 0;
   int p1 = 0;
   int p2 = 0;
@@ -42,11 +43,11 @@ void Packet::set_destination(const char* address) {
   std::cout << destination_address << std::endl;
 }
 
-void Packet::set_destination(int address) {
+void IP::set_destination(int address) {
   destination_address = address;
 }
 
-void Packet::set_source(int address) {
+void IP::set_source(int address) {
   source_address = address;
 }
 
@@ -56,9 +57,9 @@ Parameters:
   buffer - A 1476 byte buffer that will be copied to the packet's
     payload
 */
-void Packet::set_payload(unsigned char* buffer) {
-  memset(data, 0, PACKET_PAYLOAD_SIZE);
-  memcpy(data, buffer, PACKET_PAYLOAD_SIZE);
+void IP::set_payload(unsigned char* buffer) {
+  memset(data, 0, IP_PAYLOAD_SIZE);
+  memcpy(data, buffer, IP_PAYLOAD_SIZE);
 }
 
 /*
@@ -66,7 +67,7 @@ This method encapsulates a datagram.
 Parameters:
   datagram - The datagram to encapsulate.
 */
-void Packet::set_payload(Datagram datagram) {
+void IP::set_payload(Datagram datagram) {
   datagram.get_bytestring(data);
 }
 
@@ -74,20 +75,20 @@ void Packet::set_payload(Datagram datagram) {
 This function is used for transferring the payload of the
 packet into a buffer that is passed in.
 Parameters:
-  buffer - This buffer should be exactly PACKET_PAYLOAD_SIZE bytes
+  buffer - This buffer should be exactly IP_PAYLOAD_SIZE bytes
 */
-void Packet::get_payload(unsigned char* buffer) {
-  memset(buffer, 0, PACKET_PAYLOAD_SIZE);
-  memcpy(buffer, data, PACKET_PAYLOAD_SIZE);
+void IP::get_payload(unsigned char* buffer) {
+  memset(buffer, 0, IP_PAYLOAD_SIZE);
+  memcpy(buffer, data, IP_PAYLOAD_SIZE);
 }
 
 /*
 This function copies a byte string representation of this packet into a buffer.
 Parameters:
-  buffer - A buffer that is of size PACKET_SIZE that will hold all the information.
+  buffer - A buffer that is of size IP_SIZE that will hold all the information.
 */
-void Packet::to_byte_string(unsigned char* buffer) {
-  memset(buffer, 0, PACKET_SIZE);
+void IP::to_byte_string(unsigned char* buffer) {
+  memset(buffer, 0, IP_SIZE);
   memcpy(buffer, &V_IHL, 1);
   buffer += 1;
   memcpy(buffer, &TOS, 1);
@@ -110,10 +111,10 @@ void Packet::to_byte_string(unsigned char* buffer) {
   buffer += 4;
   memcpy(buffer, &options, 8);
   buffer += 8;
-  memcpy(buffer, data, PACKET_PAYLOAD_SIZE);
+  memcpy(buffer, data, IP_PAYLOAD_SIZE);
 }
 
-void Packet::load_packet_from_byte_string(unsigned char* byte_string) {
+void IP::load_packet_from_byte_string(unsigned char* byte_string) {
   memcpy(&V_IHL, byte_string, 1);
   byte_string += 1;
   memcpy(&TOS, byte_string, 1);
@@ -136,7 +137,7 @@ void Packet::load_packet_from_byte_string(unsigned char* byte_string) {
   byte_string += 4;
   memcpy(&options, byte_string, 8);
   byte_string += 8;
-  memcpy(data, byte_string, PACKET_PAYLOAD_SIZE);
+  memcpy(data, byte_string, IP_PAYLOAD_SIZE);
 }
 
 /*
@@ -145,16 +146,16 @@ is the payload of an IP packet.
 Parameters:
   datagram - A pointer to the datagram to instantiate.
 */
-void Packet::load_datagram(Datagram* datagram) {
+void IP::load_datagram(Datagram* datagram) {
   datagram->instantiate_from_bytestring(data);
 }
 
-char* Packet::address_to_string(bool source) {
+char* IP::address_to_string(bool source) {
   memset(address_string, 0, 17);
   if (source) {
-    Packet::address_to_string(this->get_source(), address_string);
+    IP::address_to_string(this->get_source(), address_string);
   } else {
-    Packet::address_to_string(this->get_destination(), address_string);
+    IP::address_to_string(this->get_destination(), address_string);
   }
   return address_string;
 }
@@ -163,7 +164,7 @@ char* Packet::address_to_string(bool source) {
 This method is used to get a string representation
 of a packet's address
 */
-void Packet::address_to_string(int address, char* buffer) {
+void IP::address_to_string(int address, char* buffer) {
   int pos = 0;
   int octetVal = 0;
   
@@ -183,4 +184,8 @@ void Packet::address_to_string(int address, char* buffer) {
       buffer[pos++] = (unsigned char) (octetVal % 10 + '0');
     }
   }
+}
+
+void IP::encapsulate(ICMP message) {
+  
 }

@@ -1,13 +1,14 @@
-#ifndef _PACKET_H_
-#define _PACKET_H_
+#ifndef _IP_H_
+#define _IP_H_
 
 class Datagram;
+class ICMP;
 
-const int PACKET_PAYLOAD_SIZE = 1472;
-const int PACKET_SIZE = 1500;
+const int IP_PAYLOAD_SIZE = 1472;
+const int IP_SIZE = 1500;
 const int IP_BROADCAST = 0b11111111'11111111'11111111'11111111;
 
-class Packet {
+class IP {
   unsigned char V_IHL = 0b01000101;
   unsigned char TOS = 0b00000000;
   short int total_length = 0;
@@ -19,10 +20,10 @@ class Packet {
   int source_address = 0;
   int destination_address = 0;
   long int options = 0;
-  unsigned char data[PACKET_PAYLOAD_SIZE];
+  unsigned char data[IP_PAYLOAD_SIZE];
   char address_string[17];
 public:
-  Packet();
+  IP();
   void set_destination(const char* address);
   void set_destination(int address);
   void set_source(int address);
@@ -39,6 +40,7 @@ public:
   void load_datagram(Datagram* datagram);
   char* address_to_string(bool source);
   static void address_to_string(int address, char* buffer);
+  void encapsulate(ICMP message);
 };
 #endif
 

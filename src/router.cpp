@@ -1,10 +1,15 @@
 #include "router.h"
+#include "dhcp.h"
 #include "arp.h"
+#include "frame.h"
+#include "ip.h"
+#include "datagram.h"
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
 Router::Router() {
   macAddress = 0x0001234455667;
-  dhcp_server.set_router(this);
+  this->dhcp_server = new DHCP_Server();
+  this->dhcp_server->set_router(this);
 }
 
 bool Router::accept_connections() {
@@ -63,6 +68,7 @@ bool Router::accept_connections() {
 }
 
 void Router::handleConnection() {
+  Frame frame;
   int bytesRead = 0;
   while (true) {
     memset(recv_buffer, 0, BUFFER_SIZE);
@@ -81,14 +87,15 @@ void Router::handleConnection() {
 void Router::process_frame(Frame frame) {
   if (frame.get_destination_address() == 0xffffffffffff || frame.get_destination_address() == macAddress) {
     if (frame.get_type() == 0x0800) {
+      IP packet;
       // Process IP Packet
       frame.load_packet(&packet);
-      process_packet(packet);
+      process_packet(frame, packet);
     } else if (frame.get_type() == 0x0806) {
       // Process ARP Query
       Arp query;
       frame.demultiplex(&query);
-      process_query(query);
+      process_query(frame, query);
     } else {
       std::cerr << "Received frame with unknow protocol " << frame.get_type_string() << std::endl;
     }
@@ -97,25 +104,26 @@ void Router::process_frame(Frame frame) {
   }
 }
 
-void Router::process_packet(Packet packet) {
+void Router::process_packet(Frame frame, IP packet) {
   if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr) {
     if (packet.get_protocol() == 17) {
+      Datagram datagram;
       packet.load_datagram(&datagram);
-      process_datagram(datagram);
+      process_datagram(frame, datagram);
     } else {
       std::cerr << "Received packet with unknown destination protocol " << packet.get_protocol() << std::endl;
     }
   } else {
     char buffer[17] {0};
-    Packet::address_to_string(packet.get_destination(), buffer);
+    IP::address_to_string(packet.get_destination(), buffer);
     std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << buffer << std::endl;
     // Silently dismiss packet
   }
 }
 
-void Router::process_query(Arp query) {
+void Router::process_query(Frame frame, Arp query) {
   char buf[17] {0};
-  Packet::address_to_string(query.get_target_protocol(), buf);
+  IP::address_to_string(query.get_target_protocol(), buf);
   std::cout << "Received ARP query targetted for " << buf << std::endl;
   if (query.get_target_protocol() == ip_addr) {
     Frame frame;
@@ -130,10 +138,11 @@ void Router::process_query(Arp query) {
   }
 }
 
-void Router::process_datagram(Datagram datagram) {
+void Router::process_datagram(Frame frame, Datagram datagram) {
   if (datagram.get_destination_port() == 67) {
-    datagram.unencapsulate_dhcp_message(&dhcp_message);
-    dhcp_server.handle_message(dhcp_message);
+    DHCP_Message message;
+    datagram.unencapsulate_dhcp_message(&message);
+    this->dhcp_server->handle_message(frame, message);
   } else {
     std::cerr << "datagram received with unknown destination port" << datagram.get_destination_port() << std::endl;
     return;
@@ -172,31 +181,11 @@ void Router::broadcast(char *msg) {
   mtx.unlock();
 }
 
-void Router::send_frame(Frame frame) {
-  frame.get_bit_string(send_buffer);
-}
-
-/*
-This method is used to set the source 
-of the router's frame to the router's
-MAC address.
-*/
-void Router::set_self_as_frame_source() {
-  this->frame.set_source(macAddress);
-}
-
-/*
-Getter for the router's IP address.w
-*/
-int Router::get_ip_addr() {
-  return ip_addr;
-}
-
 /*
 This method is used to send the router's
 frame.
 */
-void Router::send_frame() {
+void Router::send_frame(Frame frame) {
   frame.get_bit_string(send_buffer);
   send(clientfd, send_buffer, BUFFER_SIZE, 0);
 }

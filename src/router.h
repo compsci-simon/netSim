@@ -9,12 +9,15 @@
 #include <thread>
 #include <arpa/inet.h>
 #include <random>
-#include "frame.h"
-#include "packet.h"
-#include "datagram.h"
 
 const int PORT = 12345;
 const int BUFFER_SIZE = 13734;
+
+class Frame;
+class IP;
+class Arp;
+class Datagram;
+class DHCP_Server;
 
 class Router {
 private:
@@ -24,30 +27,24 @@ private:
   std::vector<int> threads;
   std::mutex mtx;
   static void handleConnection(int socketfd, Router *router);
-  unsigned char send_buffer[BUFFER_SIZE] {0};
-  unsigned char recv_buffer[BUFFER_SIZE] {0};
   int ip_addr = 0b11000000'10100100'00000000'00000001;
   long int macAddress {0};
-  int clientfd;
+  DHCP_Server* dhcp_server;
 public:
-  Frame frame;
-  Packet packet;
-  Datagram datagram;
-  DHCP_Message dhcp_message;
-  DHCP_Server dhcp_server;
-
+  int clientfd;
+  unsigned char send_buffer[BUFFER_SIZE] {0};
+  unsigned char recv_buffer[BUFFER_SIZE] {0};
   Router();
   bool accept_connections();
   void broadcast(char *msg);
-  void send_frame(Frame frame);
   void handleConnection();
-  int get_ip_addr();
-  void set_self_as_frame_source();
-  void send_frame();
+  int get_ip_addr() { return ip_addr; }
+  void send_frame(Frame frame);
   void process_frame(Frame frame);
-  void process_packet(Packet packet);
-  void process_query(Arp query);
-  void process_datagram(Datagram datagram);
+  void process_packet(Frame frame, IP packet);
+  void process_query(Frame frame, Arp query);
+  void process_datagram(Frame frame, Datagram datagram);
+  long get_mac_address() { return macAddress; }
 };
 
 #endif

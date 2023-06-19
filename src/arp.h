@@ -15,6 +15,7 @@ public:
   void set_source_protocol(int addr) { sourceProtocolAddr = addr; }
   void set_target_hardware(long int addr) { targetHardwareAddr = addr; }
   void set_target_protocol(int addr) { targetProtocolAddr = addr; }
+  void set_operation(short int operation) { this->operation = operation; }
   long int get_source_hardware() { return sourceHardwareAddr; }
   int get_source_protocol() { return sourceProtocolAddr; }
   long int get_target_hardware() { return targetHardwareAddr; }

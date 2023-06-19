@@ -3,7 +3,7 @@
 #include <string>
 
 class Arp;
-class Packet;
+class IP;
 
 class Frame {
   unsigned char preamble[7] { 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa };
@@ -18,7 +18,7 @@ public:
   Frame() {};
   Frame(unsigned char* string);
   void set_payload(unsigned char* new_payload);
-  void set_payload(Packet packet);
+  void set_payload(IP packet);
   void get_payload(unsigned char* buffer);
   void set_source(long int source);
   void set_destination(long int destination);
@@ -28,7 +28,7 @@ public:
   void load_frame_from_string(unsigned char* frame_string);
   void get_bit_string(unsigned char* buffer);
   void instantiate_from_bit_string(unsigned char* buffer);
-  void load_packet(Packet* packet);
+  void load_packet(IP* packet);
   void swap_source_and_dest();
   unsigned char* address_to_string(bool source);
   short int get_type() { return type; }

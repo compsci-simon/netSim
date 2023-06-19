@@ -1,6 +1,6 @@
 #include <iostream>
 #include "frame.h"
-#include "packet.h"
+#include "ip.h"
 #include "arp.h"
 #include "utils.h"
 
@@ -13,7 +13,7 @@ void Frame::set_payload(unsigned char* new_payload) {
   memcpy(payload, new_payload, 1500);
 }
 
-void Frame::set_payload(Packet packet) {
+void Frame::set_payload(IP packet) {
   packet.to_byte_string(payload);
   type = 0x0800;
 }
@@ -50,7 +50,7 @@ void Frame::set_destination(long int destination) {
 Getter for source address.
 */
 long int Frame::get_source_address() {
-  return destination_address;  
+  return source_address;  
 }
 
 /*
@@ -123,7 +123,7 @@ void Frame::load_frame_from_string(unsigned char* frame_string) {
   memcpy(&CRC, frame_string, 4);
 }
 
-void Frame::load_packet(Packet* packet) {
+void Frame::load_packet(IP* packet) {
   packet->load_packet_from_byte_string(payload);
 }
 

@@ -44,6 +44,7 @@ const int DHCP_LENGTH = 1468;
 const int DHCP_OPTIONS_LENGTH = 1232;
 
 class Router;
+class Frame;
 
 class DHCP_Message {
   unsigned char op;
@@ -94,7 +95,7 @@ class DHCP_Server {
 public:
   DHCP_Server();
   DHCP_Server(Router* router);
-  void handle_message(DHCP_Message message);
+  void handle_message(Frame frame, DHCP_Message message);
   void set_router(Router* router);
 };
 

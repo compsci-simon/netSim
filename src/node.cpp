@@ -1,7 +1,8 @@
-
 #include "logging.h"
 #include "node.h"
 #include "utils.h"
+#include "arp.h"
+#include <chrono>
 
 int Node::sendMessageToServer(std::string message) {
   return 0;
@@ -39,76 +40,6 @@ int Node::connect_to_router() {
   }
   return 0;
   }
-
-void Node::dhcp_discover() {
-
-  // DHCP DISCOVER
-  dhcp_message.set_op(1);
-  dhcp_message.set_option(53, 1, 1);
-  dhcp_message.set_ciaddr(0);
-  dhcp_message.set_giaddr(0);
-  dhcp_message.set_broadcast();
-  dhcp_message.set_xid(1234567);
-
-  datagram.set_source_port(68);
-  datagram.set_destination_port(67);
-  datagram.set_payload(dhcp_message);
-
-  packet.set_destination(0xffffffff);
-  packet.set_source(0);
-  packet.set_payload(datagram);
-  packet.set_options(1234);
-  packet.set_protocol(17);
-
-  frame.set_source(macAddress);
-  frame.set_destination(0x00ffffffffffff);
-  frame.set_payload(packet);
-  frame.get_bit_string(send_buffer);
-  
-  send(sockfd, send_buffer, BUFFER_SIZE, 0);
-}
-
-/*
-If a dhcp discover receives a reply, then the process
-can continue to a dhcp request from the client to the
-server.
-Parameters:
-  message - The DHCP Message received from the server.
-*/
-void Node::dhcp_request(DHCP_Message message) {
-  std::cout << "IN REQUESTING STATE" << std::endl;
-  message.clear_options();
-  message.set_option(53, 1, 3);
-  datagram.set_source_port(68);
-  datagram.set_destination_port(67);
-  datagram.set_payload(message);
-
-  packet.set_source(0);
-  packet.set_destination(message.get_siaddr());
-  packet.set_payload(datagram);
-  packet.set_protocol(17);
-
-  frame.swap_source_and_dest();
-  frame.set_payload(packet);
-  frame.get_bit_string(send_buffer);
-  send(sockfd, send_buffer, BUFFER_SIZE, 0);
-}
-
-void Node::dhcp_bind(DHCP_Message message) {
-  char buffer[17] {0};
-  Packet::address_to_string(this->ipAddress, buffer);
-  std::cout << "IN BINDING STATE. IP address accepted: " << buffer << std::endl;
-  listen = false;
-}
-
-/*
-This method is used for address resolution, i.e.
-to determine what mac address is assosciated with a given 
-IP address.
-*/
-void Node::arp(int address) {
-
-}
 
 void Node::disconnect() {
   receive_thread.join();
@@ -179,6 +110,25 @@ void Node::handle_packet(Packet packet) {
   }
 }
 
+void Node::process_arp(Arp query) {
+  if (query.get_target_protocol() == this->ipAddress) {
+    // Respond to ARP query
+    Frame frame;
+    query.set_target_hardware(this->macAddress);
+    frame.set_destination(query.get_source_hardware());
+    frame.set_source(this->macAddress);
+    frame.set_type(0x0806);
+    frame.multiplex(query);
+    frame.get_bit_string(send_buffer);
+    send(sockfd, send_buffer, BUFFER_SIZE, 0);
+  } else {
+    // Silently dismiss ARP query
+    char buf[17] {0};
+    Packet::address_to_string(query.get_target_protocol(), buf);
+    std::cout << "Received ARP query for " << buf << std::endl;
+  }
+}
+
 /*
 This method is used for processing datagrams.
 Parameters:
@@ -217,4 +167,81 @@ void Node::process_dhcp_message(DHCP_Message message) {
     // DHCP ACK
     this->dhcp_bind(dhcp_message);
   }
+}
+
+void Node::dhcp_discover() {
+
+  // DHCP DISCOVER
+  dhcp_message.set_op(1);
+  dhcp_message.set_option(53, 1, 1);
+  dhcp_message.set_ciaddr(0);
+  dhcp_message.set_giaddr(0);
+  dhcp_message.set_broadcast();
+  dhcp_message.set_xid(1234567);
+
+  datagram.set_source_port(68);
+  datagram.set_destination_port(67);
+  datagram.set_payload(dhcp_message);
+
+  packet.set_destination(0xffffffff);
+  packet.set_source(0);
+  packet.set_payload(datagram);
+  packet.set_options(1234);
+  packet.set_protocol(17);
+
+  frame.set_source(macAddress);
+  frame.set_destination(0x00ffffffffffff);
+  frame.set_payload(packet);
+  frame.get_bit_string(send_buffer);
+  
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
+}
+
+/*
+If a dhcp discover receives a reply, then the process
+can continue to a dhcp request from the client to the
+server.
+Parameters:
+  message - The DHCP Message received from the server.
+*/
+void Node::dhcp_request(DHCP_Message message) {
+  std::cout << "IN REQUESTING STATE" << std::endl;
+  message.clear_options();
+  message.set_option(53, 1, 3);
+  datagram.set_source_port(68);
+  datagram.set_destination_port(67);
+  datagram.set_payload(message);
+
+  packet.set_source(0);
+  packet.set_destination(message.get_siaddr());
+  packet.set_payload(datagram);
+  packet.set_protocol(17);
+
+  frame.swap_source_and_dest();
+  frame.set_payload(packet);
+  frame.get_bit_string(send_buffer);
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
+}
+
+void Node::dhcp_bind(DHCP_Message message) {
+  char buffer[17] {0};
+  Packet::address_to_string(this->ipAddress, buffer);
+  std::cout << "BINDING. PERFORMING ARP QUERY..." << std::endl;
+  Arp query;
+  query.set_operation(1);
+  query.set_source_hardware(this->macAddress);
+  query.set_source_protocol(this->ipAddress);
+  query.set_target_hardware(0);
+  query.set_target_protocol(this->ipAddress);
+
+  frame.multiplex(query);
+  frame.set_destination(0x00ffffffffffff);
+  frame.set_source(macAddress);
+  frame.set_type(0x0806);
+  frame.get_bit_string(send_buffer);
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
+
+  std::this_thread::sleep_for(std::chrono::seconds(3));
+  std::cout << "IN BINDING STATE. IP address accepted: " << buffer << std::endl;
+  listen = false;
 }

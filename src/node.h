@@ -48,12 +48,12 @@ public:
   void dhcp_discover();
   void dhcp_request(DHCP_Message message);
   void dhcp_bind(DHCP_Message message);
-  void arp(int address);
   void disconnect();
   void set_ip_address(int new_ip) { ipAddress = new_ip; };
   void start_listen_thread();
   void handle_frame();
   void handle_packet(Packet packet);
+  void process_arp(Arp query);
   void handle_datagram(Datagram datagram);
   void process_dhcp_message(DHCP_Message message);
 };

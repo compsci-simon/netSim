@@ -46,6 +46,7 @@ public:
   void send_frame();
   void process_frame(Frame frame);
   void process_packet(Packet packet);
+  void process_query(Arp query);
   void process_datagram(Datagram datagram);
 };
 

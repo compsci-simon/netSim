@@ -1,4 +1,5 @@
 #include "router.h"
+#include "arp.h"
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
 Router::Router() {
@@ -85,6 +86,9 @@ void Router::process_frame(Frame frame) {
       process_packet(packet);
     } else if (frame.get_type() == 0x0806) {
       // Process ARP Query
+      Arp query;
+      frame.demultiplex(&query);
+      process_query(query);
     } else {
       std::cerr << "Received frame with unknow protocol " << frame.get_type_string() << std::endl;
     }
@@ -106,6 +110,23 @@ void Router::process_packet(Packet packet) {
     Packet::address_to_string(packet.get_destination(), buffer);
     std::cerr << "Received a packet with a destination not equal to router IP or broadcast. Packet destination IP = " << buffer << std::endl;
     // Silently dismiss packet
+  }
+}
+
+void Router::process_query(Arp query) {
+  char buf[17] {0};
+  Packet::address_to_string(query.get_target_protocol(), buf);
+  std::cout << "Received ARP query targetted for " << buf << std::endl;
+  if (query.get_target_protocol() == ip_addr) {
+    Frame frame;
+    query.set_target_hardware(macAddress);
+    frame.set_destination(query.get_source_hardware());
+    frame.set_source(macAddress);
+    frame.set_type(0x0806);
+    frame.get_bit_string(send_buffer);
+    send(clientfd, send_buffer, BUFFER_SIZE, 0);
+  } else {
+    std::cout << "Dismissing ARP query" << std::endl;
   }
 }
 

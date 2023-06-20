@@ -30,9 +30,11 @@ class Node {
   bool listen;
   long int macAddress {0};
   int ipAddress {0};
+  int subnet_mask {0};
   int router_ip {0};
   std::thread receive_thread;
   std::vector<std::vector<long>> arp_table;
+  bool perform_router_discover = true;
 
   int sendMessageToServer(std::string message);
   void receive_messages_from_server();
@@ -58,6 +60,8 @@ public:
   void handle_datagram(Frame frame, Datagram datagram);
   void process_dhcp_message(Frame frame, DHCP_Message message);
   void set_router_ip(int ip) { router_ip = ip; }
+  void set_subnet_mask(int subnet_mask) { this->subnet_mask = subnet_mask; }
+  int get_subnet_mask() { return subnet_mask; }
   int get_router_ip() { return router_ip; }
   void router_solicitation();
 };

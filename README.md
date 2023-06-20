@@ -12,16 +12,16 @@ Encapsulate IP packets inside the link-layer frames. Then encapsulate Datagram p
 
 ### Lines of code
 
-cloc|github.com/AlDanial/cloc v 1.94  T=0.01 s (2029.9 files/s, 164199.5 lines/s)
+cloc|github.com/AlDanial/cloc v 1.94  T=0.02 s (1545.0 files/s, 133897.3 lines/s)
 --- | ---
 
 Language|files|blank|comment|code
 :-------|-------:|-------:|-------:|-------:
-C++|12|149|244|1117
-C/C++ Header|10|41|136|337
+C++|12|161|247|1244
+C/C++ Header|10|42|137|349
 JSON|1|0|0|72
 XML|2|0|0|40
 Markdown|1|8|0|19
 make|1|7|0|14
 --------|--------|--------|--------|--------
-SUM:|27|205|380|1599
+SUM:|27|218|384|1738

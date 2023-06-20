@@ -23,6 +23,8 @@
 #ifndef _ICMP_H_
 #define _ICMP_H_
 
+#include <vector>
+
 class ICMP {
   unsigned char type {0};
   unsigned char code {0};
@@ -30,18 +32,23 @@ class ICMP {
   unsigned char num_addrs {0};
   unsigned char addr_entry_size {0};
   short int lifetime {0};
-  int router_address {0};
+  // Router Address and Preference Level vector
+  std::vector<int> rapl_vector;
 public:
   void set_type(unsigned char type) { this->type = type; }
   void set_code(unsigned char code) { this->code = code; }
   void set_num_addrs(unsigned char num_addrs) { this-> num_addrs = num_addrs; }
   void set_addr_entry_size(unsigned char addr_entry_size) { this->addr_entry_size = addr_entry_size; }
+  void set_lifetime(short int lifetime) { this->lifetime = lifetime; }
   unsigned char get_type() { return type; }
   unsigned char get_code() { return code; }
   unsigned char get_num_addrs() { return num_addrs; }
   unsigned char get_addr_entry_size() { return addr_entry_size; }
+  short int get_lifetime() { return lifetime; }
   void get_byte_string(unsigned char* buffer);
   void instantiate_from_byte_string(unsigned char* buffer);
+  void add_addr_and_pref(int addr, int pref);
+  int get_addr(int index);
 };
 
 #endif

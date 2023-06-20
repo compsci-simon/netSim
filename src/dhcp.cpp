@@ -51,6 +51,8 @@ void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
     message.set_yiaddr(new_ip);
     message.set_siaddr(this->router->get_ip_addr());
     message.clear_options();
+    message.set_option(1, 4, 0xffffff00);
+    message.set_option(3, 4, this->router->get_ip_addr());
     message.set_option(53, 1, 2);
 
     datagram.set_payload(message);
@@ -81,6 +83,8 @@ void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
     std::cout << "DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED." << std::endl;
 
     message.clear_options();
+    message.set_option(1, 4, 0xffffff00);
+    message.set_option(3, 4, this->router->get_ip_addr());
     message.set_option(53, 1, 5);
 
     datagram.set_payload(message);

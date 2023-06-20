@@ -16,6 +16,7 @@ const int BUFFER_SIZE = 13734;
 class Frame;
 class IP;
 class Arp;
+class ICMP;
 class Datagram;
 class DHCP_Server;
 
@@ -27,7 +28,7 @@ private:
   std::vector<int> threads;
   std::mutex mtx;
   static void handleConnection(int socketfd, Router *router);
-  int ip_addr = 0b11000000'10100100'00000000'00000001;
+  int ip_addr = 0b11000000'10101000'00000000'00000001;
   long int macAddress {0};
   DHCP_Server* dhcp_server;
 public:
@@ -43,6 +44,7 @@ public:
   void process_frame(Frame frame);
   void process_packet(Frame frame, IP packet);
   void process_query(Frame frame, Arp query);
+  void process_message(Frame frame, ICMP message);
   void process_datagram(Frame frame, Datagram datagram);
   long get_mac_address() { return macAddress; }
 };

@@ -3,6 +3,7 @@
 #include "arp.h"
 #include "frame.h"
 #include "ip.h"
+#include "icmp.h"
 #include "datagram.h"
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
@@ -105,8 +106,13 @@ void Router::process_frame(Frame frame) {
 }
 
 void Router::process_packet(Frame frame, IP packet) {
-  if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr) {
-    if (packet.get_protocol() == 17) {
+  if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr 
+      || packet.get_destination() == 0xe0000001) {
+    if (packet.get_protocol() == 1) {
+      ICMP message;
+      packet.unencapsulate(&message);
+      process_message(frame, message);
+    } else if (packet.get_protocol() == 17) {
       Datagram datagram;
       packet.load_datagram(&datagram);
       process_datagram(frame, datagram);
@@ -135,6 +141,40 @@ void Router::process_query(Frame frame, Arp query) {
     send(clientfd, send_buffer, BUFFER_SIZE, 0);
   } else {
     std::cout << "Dismissing ARP query" << std::endl;
+  }
+}
+
+void Router::process_message(Frame source_frame, ICMP message) {
+  if (message.get_type() == 10) {
+    // Router solicitation received
+    if (message.get_code() != 0) {
+      std::cerr << "Received ICMP message with invalid code " << message.get_code() << std::endl;
+      return;
+    }
+    // TODO: Do additional check to make sure the length of the ICMP message is no longer than 8 using the packet
+    ICMP message;
+    IP packet;
+    Frame frame;
+
+    message.set_type(9);
+    message.set_num_addrs(1);
+    message.set_addr_entry_size(2);
+    message.add_addr_and_pref(ip_addr, 1);
+
+    packet.set_source(ip_addr);
+    packet.set_destination(0xe0000001);
+    packet.set_protocol(1);
+    packet.encapsulate(message);
+
+    frame.set_source(macAddress);
+    frame.set_destination(source_frame.get_source_address());
+    frame.set_type(0x0800);
+    frame.get_bit_string(send_buffer);
+    send(clientfd, send_buffer, BUFFER_SIZE, 0);
+
+  } else {
+    std::cerr << "Received ICMP message with unknown type " << message.get_type() << std::endl;
+    return;
   }
 }
 

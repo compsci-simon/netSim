@@ -104,9 +104,15 @@ Parameters:
 */
 void Node::handle_packet(Frame frame, IP packet) {
   if (packet.get_destination() == 0xffffffff 
-    || packet.get_destination() == this->ipAddress) {
+    || packet.get_destination() == this->ipAddress
+    || packet.get_destination() == 0xe0000001) {
     
-    if (packet.get_protocol() == 17) {
+    if (packet.get_protocol() == 1) {
+      // ICMP message
+      ICMP icmp_message;
+      packet.unencapsulate(&icmp_message);
+      process_icmp_packets(icmp_message);
+    } else if (packet.get_protocol() == 17) {
       Datagram datagram;
       packet.load_datagram(&datagram);
       handle_datagram(frame, datagram);
@@ -140,6 +146,27 @@ void Node::process_arp(Arp query) {
 void Node::process_icmp_packets(ICMP packet) {
   if (packet.get_type() == 9) {
     // Router advertisement
+    if (packet.get_code() == 0) {
+      std::cerr << "Received ICMP router advertisement with non-zero code " << packet.get_code() << std::endl;
+      return;
+    }
+    if (packet.get_num_addrs() < 1) {
+      std::cerr << "Received ICMP router advertisement with num addrs less than 1 " << packet.get_num_addrs() << std::endl;
+      return;
+    }
+    if (packet.get_addr_entry_size() < 2) {
+      std::cerr << "Received ICMP router advertisement with addr entry size less than 2 " << packet.get_addr_entry_size() << std::endl;
+      return;
+    }
+    if (perform_router_discover) {
+      set_router_ip(packet.get_addr(0));
+    } else {
+      std::cerr << "Discarded ICMP message due to router discovery being turned off" << std::endl;
+      return;
+    }
+  } else {
+    std::cerr << "Received ICMP message with unknown type " << packet.get_type() << std::endl;
+    return;
   }
 }
 
@@ -175,6 +202,8 @@ void Node::process_dhcp_message(Frame frame, DHCP_Message message) {
       return;
     }
     this->set_ip_address(message.get_yiaddr());
+    this->set_subnet_mask(message.get_option(1));
+    this->set_router_ip(message.get_option(3));
     this->dhcp_request(frame, message);
   } else if (message.get_option(53) == 4) {
     // DHCP NAK
@@ -252,7 +281,6 @@ void Node::dhcp_bind(DHCP_Message message) {
   Arp query;
   char buffer[17] {0};
 
-  IP::address_to_string(this->ipAddress, buffer);
   std::cout << "BINDING. PERFORMING ARP QUERY..." << std::endl;
   
   query.set_operation(1);
@@ -269,13 +297,33 @@ void Node::dhcp_bind(DHCP_Message message) {
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
 
   std::this_thread::sleep_for(std::chrono::seconds(3));
+  IP::address_to_string(this->ipAddress, buffer);
   std::cout << "IN BINDING STATE. IP address accepted: " << buffer << std::endl;
+  IP::address_to_string(this->subnet_mask, buffer);
+  std::cout << "subnet mask " << buffer << std::endl;
+  IP::address_to_string(this->router_ip, buffer);
+  std::cout << "Gateway IP " << buffer << std::endl;
+  
   listen = false;
 }
 
 void Node::router_solicitation() {
+  Frame frame;
+  IP ip_packet;
   ICMP icmp_packet;
+
   icmp_packet.set_type(10);
   icmp_packet.set_code(0);
+
+  ip_packet.set_destination(0xe0000001);
+  ip_packet.set_source(ipAddress);
+  ip_packet.set_protocol(1);
+  ip_packet.encapsulate(icmp_packet);
+
+  frame.set_payload(ip_packet);
+  frame.set_source(macAddress);
+  frame.set_destination(0x00ffffffffffff);
+  frame.get_bit_string(send_buffer);
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
 
 }

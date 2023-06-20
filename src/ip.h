@@ -11,7 +11,7 @@ const int IP_BROADCAST = 0b11111111'11111111'11111111'11111111;
 class IP {
   unsigned char V_IHL = 0b01000101;
   unsigned char TOS = 0b00000000;
-  short int total_length = 0;
+  short int total_length = 1476;
   short int identification = 0;
   short int flags_and_offset = 0;
   unsigned char TTL = 123;
@@ -41,6 +41,7 @@ public:
   char* address_to_string(bool source);
   static void address_to_string(int address, char* buffer);
   void encapsulate(ICMP message);
+  void unencapsulate(ICMP* message);
 };
 #endif
 

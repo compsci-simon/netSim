@@ -167,6 +167,7 @@ of a packet's address
 void IP::address_to_string(int address, char* buffer) {
   int pos = 0;
   int octetVal = 0;
+  memset(buffer, 0, 17);
   
   for (int octet = 0; octet < 4; octet++) {
     octetVal = (address >> ((3-octet)*8)) & 0xff;
@@ -187,5 +188,10 @@ void IP::address_to_string(int address, char* buffer) {
 }
 
 void IP::encapsulate(ICMP message) {
-  
+  memset(data, 0, 1472);
+  message.get_byte_string(data);
+}
+
+void IP::unencapsulate(ICMP* message) {
+  message->instantiate_from_byte_string(data);
 }

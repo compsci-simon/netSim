@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include "node.h"
 
 int main(int argc, char* argv[]) {
@@ -10,6 +11,9 @@ int main(int argc, char* argv[]) {
   node.connect_to_router();
   node.start_listen_thread();
   node.dhcp_discover();
+  std::this_thread::sleep_for(std::chrono::seconds(2));
+  node.ping(node.get_router_ip());
+  std::this_thread::sleep_for(std::chrono::seconds(2));
   node.disconnect();
   return 0;
 }

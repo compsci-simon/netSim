@@ -1,21 +1,24 @@
 CC = g++
 CFLAGS = -Wall -std=c++14 -g
 
-NODE_SRC = src/node.cpp
-ROUTER_SRC = src/router.cpp
+CLIENT_SRC = src/client.cpp
+SERVER_SRC = src/server.cpp
+HOSTS_SRC = src/hosts/*.cpp
+PROTOCOLS_SRC = src/protocols/*.cpp
+UTILS_SRC = src/utils/*.cpp
 
-ROUTER_BIN = bin/server
-NODE_BIN = bin/client
+SERVER_BIN = bin/server
+CLIENT_BIN = bin/client
 
 .PHONY: all clean
 
-all: clean $(ROUTER_BIN) $(NODE_BIN)
+all: clean $(SERVER_BIN) $(CLIENT_BIN)
 
-$(ROUTER_BIN): src/server.cpp src/dhcp.cpp $(ROUTER_SRC) src/ip.cpp src/datagram.cpp src/frame.cpp src/utils.cpp src/arp.cpp src/icmp.cpp
+$(SERVER_BIN): $(SERVER_SRC) $(HOSTS_SRC) $(PROTOCOLS_SRC) $(UTILS_SRC)
 	$(CC) $(CFLAGS) -o $@ $^
 
-$(NODE_BIN): src/client.cpp $(NODE_SRC) $(ROUTER_SRC) src/ip.cpp src/datagram.cpp src/frame.cpp src/dhcp.cpp src/utils.cpp src/arp.cpp src/icmp.cpp
+$(CLIENT_BIN): $(CLIENT_SRC) $(HOSTS_SRC) $(PROTOCOLS_SRC) $(UTILS_SRC)
 	$(CC) $(CFLAGS) -o $@ $^
 
 clean:
-	rm -rf $(ROUTER_BIN) $(ROUTER_BIN).dSYM $(NODE_BIN) $(NODE_BIN).dSYM bin/frame.dSYM bin/node.dSYM bin/router.dSYM /Users/simon/Desktop/netSim.log
+	rm -rf $(SERVER_BIN) $(SERVER_BIN).dSYM $(CLIENT_BIN) $(CLIENT_BIN).dSYM /Users/simon/Desktop/netSim.log

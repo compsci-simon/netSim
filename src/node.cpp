@@ -1,7 +1,7 @@
 #include "logging.h"
 #include "utils.h"
 #include "node.h"
-#include "frame.h"
+#include "ethernet.h"
 #include "ip.h"
 #include "arp.h"
 #include "icmp.h"
@@ -67,7 +67,7 @@ frame from the recv_buffer and decide how to handle the frame.
 void Node::handle_frame() {
   int bytes_read = 0;
   listen = true;
-  Frame frame;
+  Ethernet frame;
   while (listen) {
     memset(recv_buffer, 0, BUFFER_SIZE);
     bytes_read = read(sockfd, recv_buffer, BUFFER_SIZE);
@@ -85,19 +85,19 @@ void Node::handle_frame() {
         // IP packet
         IP packet;
         std::cout << "Received IP packet" << std::endl;
-        frame.load_packet(&packet);
+        frame.decapsulate(&packet);
         handle_packet(frame, packet);
       } else if (frame.get_type() == 0x0806) {
         // ARP Query
         Arp query;
         std::cout << "Received ARP packet" << std::endl;
-        frame.demultiplex(&query);
+        frame.decapsulate(&query);
         process_arp(query);
       } else {
         std::cerr << "Unknown frame protocol type: " << frame.get_type_string() << std::endl;
       }
     } else {
-      std::cout << "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address. Frame address = " << frame.address_to_string(false) << std::endl;
+      std::cout << "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address. Ethernet address = " << frame.address_to_string(false) << std::endl;
       return;
     }
   }
@@ -108,7 +108,7 @@ This method is used for processing packets.
 Parameters:
   packet - The packet to process.
 */
-void Node::handle_packet(Frame frame, IP packet) {
+void Node::handle_packet(Ethernet frame, IP packet) {
   if (packet.get_destination() == 0xffffffff 
     || packet.get_destination() == this->ipAddress
     || packet.get_destination() == 0xe0000001) {
@@ -133,12 +133,12 @@ void Node::handle_packet(Frame frame, IP packet) {
 void Node::process_arp(Arp query) {
   if (query.get_target_protocol() == this->ipAddress) {
     // Respond to ARP query
-    Frame frame;
+    Ethernet frame;
     query.set_target_hardware(this->macAddress);
-    frame.set_destination(query.get_source_hardware());
-    frame.set_source(this->macAddress);
+    frame.set_destination_address(query.get_source_hardware());
+    frame.set_source_address(this->macAddress);
     frame.set_type(0x0806);
-    frame.multiplex(query);
+    frame.encapsulate(query);
     frame.get_bit_string(send_buffer);
     send(sockfd, send_buffer, BUFFER_SIZE, 0);
   } else if (query.get_source_protocol() == this->ipAddress) {
@@ -159,16 +159,16 @@ void Node::process_arp(Arp query) {
 }
 
 void Node::arp_query(int target_addr) {
-  Frame frame;
+  Ethernet frame;
   Arp query;
 
   query.set_source_hardware(macAddress);
   query.set_source_protocol(ipAddress);
   query.set_target_protocol(target_addr);
 
-  frame.multiplex(query);
-  frame.set_destination(0xffffffffffff);
-  frame.set_source(ipAddress);
+  frame.encapsulate(query);
+  frame.set_destination_address(0xffffffffffff);
+  frame.set_source_address(ipAddress);
   frame.set_type(0x0806);
   frame.get_bit_string(send_buffer);
 
@@ -212,7 +212,7 @@ This method is used for processing datagrams.
 Parameters:
   datagram - The datagrama to process.
 */
-void Node::handle_datagram(Frame frame, Datagram datagram) {
+void Node::handle_datagram(Ethernet frame, Datagram datagram) {
   if (datagram.get_destination_port() == 68) {
     DHCP_Message message;
     datagram.unencapsulate_dhcp_message(&message);
@@ -227,7 +227,7 @@ This method processes dhcp messages.
 Parameters:
   message - The DHCP message to process.
 */
-void Node::process_dhcp_message(Frame frame, DHCP_Message message) {
+void Node::process_dhcp_message(Ethernet frame, DHCP_Message message) {
   if (!message.option_is_set(53)) {
     std::cerr << "DHCP message received without option 53 being set." << std::endl;
     return;
@@ -254,7 +254,7 @@ void Node::dhcp_discover() {
   DHCP_Message message;
   Datagram datagram;
   IP packet;
-  Frame frame;
+  Ethernet frame;
   // DHCP DISCOVER
   message.set_op(1);
   message.set_option(53, 1, 1);
@@ -273,9 +273,9 @@ void Node::dhcp_discover() {
   packet.set_options(1234);
   packet.set_protocol(17);
 
-  frame.set_source(macAddress);
-  frame.set_destination(0x00ffffffffffff);
-  frame.set_payload(packet);
+  frame.set_source_address(macAddress);
+  frame.set_destination_address(0x00ffffffffffff);
+  frame.encapsulate(packet);
   frame.get_bit_string(send_buffer);
   
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
@@ -288,10 +288,10 @@ server.
 Parameters:
   message - The DHCP Message received from the server.
 */
-void Node::dhcp_request(Frame source_frame, DHCP_Message message) {
+void Node::dhcp_request(Ethernet source_frame, DHCP_Message message) {
   Datagram datagram;
   IP packet;
-  Frame frame;
+  Ethernet frame;
 
   std::cout << "IN REQUESTING STATE" << std::endl;
   message.clear_options();
@@ -305,16 +305,16 @@ void Node::dhcp_request(Frame source_frame, DHCP_Message message) {
   packet.set_payload(datagram);
   packet.set_protocol(17);
 
-  frame.set_source(macAddress);
-  frame.set_destination(source_frame.get_source_address());
+  frame.encapsulate(packet);
+  frame.set_source_address(macAddress);
+  frame.set_destination_address(source_frame.get_source_address());
   frame.set_type(0x0800);
-  frame.set_payload(packet);
   frame.get_bit_string(send_buffer);
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
 }
 
 void Node::dhcp_bind(DHCP_Message message) {
-  Frame frame;
+  Ethernet frame;
   Arp query;
   char buffer[17] {0};
 
@@ -326,9 +326,9 @@ void Node::dhcp_bind(DHCP_Message message) {
   query.set_target_hardware(0);
   query.set_target_protocol(this->ipAddress);
 
-  frame.multiplex(query);
-  frame.set_destination(0x00ffffffffffff);
-  frame.set_source(macAddress);
+  frame.encapsulate(query);
+  frame.set_destination_address(0x00ffffffffffff);
+  frame.set_source_address(macAddress);
   frame.set_type(0x0806);
   frame.get_bit_string(send_buffer);
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
@@ -344,7 +344,7 @@ void Node::dhcp_bind(DHCP_Message message) {
 }
 
 void Node::router_solicitation() {
-  Frame frame;
+  Ethernet frame;
   IP ip_packet;
   ICMP icmp_packet;
 
@@ -356,16 +356,16 @@ void Node::router_solicitation() {
   ip_packet.set_protocol(1);
   ip_packet.encapsulate(icmp_packet);
 
-  frame.set_payload(ip_packet);
-  frame.set_source(macAddress);
-  frame.set_destination(0x00ffffffffffff);
+  frame.encapsulate(ip_packet);
+  frame.set_source_address(macAddress);
+  frame.set_destination_address(0x00ffffffffffff);
   frame.get_bit_string(send_buffer);
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
 
 }
 
 void Node::ping(int target) {
-  Frame frame;
+  Ethernet frame;
   IP packet;
   ICMP message;
   long int mac = 0;
@@ -399,9 +399,9 @@ void Node::ping(int target) {
   packet.set_source(ipAddress);
   packet.set_protocol(1);
 
-  frame.set_payload(packet);
-  frame.set_destination(mac);
-  frame.set_source(macAddress);
+  frame.encapsulate(packet);
+  frame.set_destination_address(mac);
+  frame.set_source_address(macAddress);
   frame.set_type(0x0800);
   frame.get_bit_string(send_buffer);
   send(sockfd, send_buffer, BUFFER_SIZE, 0);

@@ -2,7 +2,7 @@
 #include "dhcp.h"
 #include "datagram.h"
 #include "ip.h"
-#include "frame.h"
+#include "ethernet.h"
 #include <iostream>
 
 DHCP_Server::DHCP_Server() {
@@ -22,7 +22,7 @@ DHCP_Server::DHCP_Server(Router* router) {
   this->router = router;
 }
 
-void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
+void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
   if (message.is_broadcast() && message.get_ciaddr() == 0 
       && message.get_giaddr() == 0 && message.get_xid() != last_xid
       && message.option_is_set(53) && message.get_option(53) == 1) {
@@ -30,7 +30,7 @@ void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
 
     Datagram datagram;
     IP packet;
-    Frame frame;
+    Ethernet frame;
 
     std::cout << "DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED." << std::endl;
     int base_ip = 0b11000000'10101000'00000000'00000000;
@@ -65,9 +65,9 @@ void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
     packet.set_source(this->router->get_ip_addr());
     packet.set_protocol(17);
 
-    frame.set_source(this->router->get_mac_address());
-    frame.set_destination(source_frame.get_source_address());
-    frame.set_payload(packet);
+    frame.set_source_address(this->router->get_mac_address());
+    frame.set_destination_address(source_frame.get_source_address());
+    frame.encapsulate(packet);
     frame.set_type(0x0800);
     frame.get_bit_string(this->router->send_buffer);
     send(this->router->clientfd, this->router->send_buffer, BUFFER_SIZE, 0);
@@ -78,7 +78,7 @@ void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
 
     Datagram datagram;
     IP packet;
-    Frame frame;
+    Ethernet frame;
 
     std::cout << "DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED." << std::endl;
 
@@ -96,9 +96,9 @@ void DHCP_Server::handle_message(Frame source_frame, DHCP_Message message) {
     packet.set_source(this->router->get_ip_addr());
     packet.set_protocol(17);
 
-    frame.set_source(this->router->get_mac_address());
-    frame.set_destination(source_frame.get_source_address());
-    frame.set_payload(packet);
+    frame.set_source_address(this->router->get_mac_address());
+    frame.set_destination_address(source_frame.get_source_address());
+    frame.encapsulate(packet);
     frame.set_type(0x0800);
     frame.get_bit_string(this->router->send_buffer);
     send(this->router->clientfd, this->router->send_buffer, BUFFER_SIZE, 0);

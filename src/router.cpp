@@ -1,7 +1,7 @@
 #include "router.h"
 #include "dhcp.h"
 #include "arp.h"
-#include "frame.h"
+#include "ethernet.h"
 #include "ip.h"
 #include "icmp.h"
 #include "datagram.h"
@@ -69,7 +69,7 @@ bool Router::accept_connections() {
 }
 
 void Router::handleConnection() {
-  Frame frame;
+  Ethernet frame;
   int bytesRead = 0;
   while (true) {
     memset(recv_buffer, 0, BUFFER_SIZE);
@@ -85,27 +85,27 @@ void Router::handleConnection() {
   close(sockfd);
 }
 
-void Router::process_frame(Frame frame) {
+void Router::process_frame(Ethernet frame) {
   if (frame.get_destination_address() == 0xffffffffffff || frame.get_destination_address() == macAddress) {
     if (frame.get_type() == 0x0800) {
       IP packet;
       // Process IP Packet
-      frame.load_packet(&packet);
+      frame.decapsulate(&packet);
       process_packet(frame, packet);
     } else if (frame.get_type() == 0x0806) {
       // Process ARP Query
       Arp query;
-      frame.demultiplex(&query);
+      frame.decapsulate(&query);
       process_query(frame, query);
     } else {
       std::cerr << "Received frame with unknow protocol " << frame.get_type_string() << std::endl;
     }
   } else {
-    std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Frame destination address = " << frame.address_to_string(false) << std::endl;
+    std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Ethernet destination address = " << frame.address_to_string(false) << std::endl;
   }
 }
 
-void Router::process_packet(Frame frame, IP packet) {
+void Router::process_packet(Ethernet frame, IP packet) {
   if (packet.get_destination() == 0xffffffff || packet.get_destination() == ip_addr 
       || packet.get_destination() == 0xe0000001) {
     if (packet.get_protocol() == 1) {
@@ -127,17 +127,17 @@ void Router::process_packet(Frame frame, IP packet) {
   }
 }
 
-void Router::process_query(Frame frame, Arp query) {
+void Router::process_query(Ethernet frame, Arp query) {
   char buf[17] {0};
   IP::address_to_string(query.get_target_protocol(), buf);
   std::cout << "Received ARP query targetted for " << buf << std::endl;
   if (query.get_target_protocol() == ip_addr) {
-    Frame frame;
+    Ethernet frame;
     query.set_target_hardware(macAddress);
 
-    frame.multiplex(query);
-    frame.set_destination(query.get_source_hardware());
-    frame.set_source(macAddress);
+    frame.encapsulate(query);
+    frame.set_destination_address(query.get_source_hardware());
+    frame.set_source_address(macAddress);
     frame.set_type(0x0806);
     frame.get_bit_string(send_buffer);
     send(clientfd, send_buffer, BUFFER_SIZE, 0);
@@ -147,17 +147,17 @@ void Router::process_query(Frame frame, Arp query) {
   }
 }
 
-void Router::process_message(Frame source_frame, ICMP message) {
+void Router::process_message(Ethernet source_frame, ICMP message) {
   ICMP new_message;
   IP new_packet, old_packet;
-  Frame new_frame;
+  Ethernet new_frame;
   if (message.get_type() == 0) {
     // PING Reply
-    source_frame.load_packet(&old_packet);
+    source_frame.decapsulate(&old_packet);
     std::cout << "Received ping reply from " << old_packet.address_to_string(true) << std::endl;
   } if (message.get_type() == 8) {
     // PING Request
-    source_frame.load_packet(&old_packet);
+    source_frame.decapsulate(&old_packet);
 
     std::cout << "Received PING from " << old_packet.address_to_string(true) << std::endl;
 
@@ -169,9 +169,9 @@ void Router::process_message(Frame source_frame, ICMP message) {
     new_packet.set_source(ip_addr);
     new_packet.set_protocol(1);
 
-    new_frame.set_payload(new_packet);
-    new_frame.set_source(macAddress);
-    new_frame.set_destination(source_frame.get_source_address());
+    new_frame.encapsulate(new_packet);
+    new_frame.set_source_address(macAddress);
+    new_frame.set_destination_address(source_frame.get_source_address());
     new_frame.set_type(0x0800);
     new_frame.get_bit_string(send_buffer);
     
@@ -195,9 +195,9 @@ void Router::process_message(Frame source_frame, ICMP message) {
     new_packet.set_protocol(1);
     new_packet.encapsulate(new_message);
 
-    new_frame.set_payload(new_packet);
-    new_frame.set_source(macAddress);
-    new_frame.set_destination(source_frame.get_source_address());
+    new_frame.encapsulate(new_packet);
+    new_frame.set_source_address(macAddress);
+    new_frame.set_destination_address(source_frame.get_source_address());
     new_frame.set_type(0x0800);
     new_frame.get_bit_string(send_buffer);
     send(clientfd, send_buffer, BUFFER_SIZE, 0);
@@ -208,7 +208,7 @@ void Router::process_message(Frame source_frame, ICMP message) {
   }
 }
 
-void Router::process_datagram(Frame frame, Datagram datagram) {
+void Router::process_datagram(Ethernet frame, Datagram datagram) {
   if (datagram.get_destination_port() == 67) {
     DHCP_Message message;
     datagram.unencapsulate_dhcp_message(&message);
@@ -222,7 +222,7 @@ void Router::process_datagram(Frame frame, Datagram datagram) {
 void Router::handleConnection(int socketfd, Router *router) {
   std::cout << "Handling connection for socket " << socketfd << std::endl;
   char buffer[BUFFER_SIZE];
-  Frame ethernet_frame;
+  Ethernet ethernet_frame;
   int bytesRead = 0;
 
   while (true) {
@@ -255,7 +255,7 @@ void Router::broadcast(char *msg) {
 This method is used to send the router's
 frame.
 */
-void Router::send_frame(Frame frame) {
+void Router::send_frame(Ethernet frame) {
   frame.get_bit_string(send_buffer);
   send(clientfd, send_buffer, BUFFER_SIZE, 0);
 }

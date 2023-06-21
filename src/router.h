@@ -13,7 +13,7 @@
 const int PORT = 12345;
 const int BUFFER_SIZE = 13734;
 
-class Frame;
+class Ethernet;
 class IP;
 class Arp;
 class ICMP;
@@ -40,12 +40,12 @@ public:
   void broadcast(char *msg);
   void handleConnection();
   int get_ip_addr() { return ip_addr; }
-  void send_frame(Frame frame);
-  void process_frame(Frame frame);
-  void process_packet(Frame frame, IP packet);
-  void process_query(Frame frame, Arp query);
-  void process_message(Frame frame, ICMP message);
-  void process_datagram(Frame frame, Datagram datagram);
+  void send_frame(Ethernet frame);
+  void process_frame(Ethernet frame);
+  void process_packet(Ethernet frame, IP packet);
+  void process_query(Ethernet frame, Arp query);
+  void process_message(Ethernet frame, ICMP message);
+  void process_datagram(Ethernet frame, Datagram datagram);
   long get_mac_address() { return macAddress; }
 };
 

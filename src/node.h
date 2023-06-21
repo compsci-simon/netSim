@@ -14,7 +14,7 @@ const int BUFFER_SIZE = 13734;
 
 class ICMP;
 class IP;
-class Frame;
+class Ethernet;
 class Arp;
 class Datagram;
 class DHCP_Message;
@@ -48,18 +48,18 @@ public:
   };
   int connect_to_router();
   void dhcp_discover();
-  void dhcp_request(Frame source, DHCP_Message message);
+  void dhcp_request(Ethernet source, DHCP_Message message);
   void dhcp_bind(DHCP_Message message);
   void disconnect();
   void set_ip_address(int new_ip) { ipAddress = new_ip; };
   void start_listen_thread();
   void handle_frame();
-  void handle_packet(Frame frame, IP packet);
+  void handle_packet(Ethernet frame, IP packet);
   void arp_query(int target_addr);
   void process_arp(Arp query);
   void process_icmp_packets(ICMP packet);
-  void handle_datagram(Frame frame, Datagram datagram);
-  void process_dhcp_message(Frame frame, DHCP_Message message);
+  void handle_datagram(Ethernet frame, Datagram datagram);
+  void process_dhcp_message(Ethernet frame, DHCP_Message message);
   void set_router_ip(int ip) { router_ip = ip; }
   void set_subnet_mask(int subnet_mask) { this->subnet_mask = subnet_mask; }
   int get_subnet_mask() { return subnet_mask; }

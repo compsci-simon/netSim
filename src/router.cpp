@@ -134,42 +134,72 @@ void Router::process_query(Frame frame, Arp query) {
   if (query.get_target_protocol() == ip_addr) {
     Frame frame;
     query.set_target_hardware(macAddress);
+
+    frame.multiplex(query);
     frame.set_destination(query.get_source_hardware());
     frame.set_source(macAddress);
     frame.set_type(0x0806);
     frame.get_bit_string(send_buffer);
     send(clientfd, send_buffer, BUFFER_SIZE, 0);
+    std::cout << "Sending ARP reply" << std::endl;
   } else {
-    std::cout << "Dismissing ARP query" << std::endl;
+    std::cout << "Dismissing ARP query." << std::endl;
   }
 }
 
 void Router::process_message(Frame source_frame, ICMP message) {
-  if (message.get_type() == 10) {
+  ICMP new_message;
+  IP new_packet, old_packet;
+  Frame new_frame;
+  if (message.get_type() == 0) {
+    // PING Reply
+    source_frame.load_packet(&old_packet);
+    std::cout << "Received ping reply from " << old_packet.address_to_string(true) << std::endl;
+  } if (message.get_type() == 8) {
+    // PING Request
+    source_frame.load_packet(&old_packet);
+
+    std::cout << "Received PING from " << old_packet.address_to_string(true) << std::endl;
+
+    new_message.set_type(0);
+    new_message.set_code(0);
+
+    new_packet.encapsulate(new_message);
+    new_packet.set_destination(old_packet.get_source());
+    new_packet.set_source(ip_addr);
+    new_packet.set_protocol(1);
+
+    new_frame.set_payload(new_packet);
+    new_frame.set_source(macAddress);
+    new_frame.set_destination(source_frame.get_source_address());
+    new_frame.set_type(0x0800);
+    new_frame.get_bit_string(send_buffer);
+    
+    send(clientfd, send_buffer, BUFFER_SIZE, 0);
+
+  } else if (message.get_type() == 10) {
     // Router solicitation received
     if (message.get_code() != 0) {
       std::cerr << "Received ICMP message with invalid code " << message.get_code() << std::endl;
       return;
     }
     // TODO: Do additional check to make sure the length of the ICMP message is no longer than 8 using the packet
-    ICMP message;
-    IP packet;
-    Frame frame;
 
-    message.set_type(9);
-    message.set_num_addrs(1);
-    message.set_addr_entry_size(2);
-    message.add_addr_and_pref(ip_addr, 1);
+    new_message.set_type(9);
+    new_message.set_num_addrs(1);
+    new_message.set_addr_entry_size(2);
+    new_message.add_addr_and_pref(ip_addr, 1);
 
-    packet.set_source(ip_addr);
-    packet.set_destination(0xe0000001);
-    packet.set_protocol(1);
-    packet.encapsulate(message);
+    new_packet.set_source(ip_addr);
+    new_packet.set_destination(0xe0000001);
+    new_packet.set_protocol(1);
+    new_packet.encapsulate(new_message);
 
-    frame.set_source(macAddress);
-    frame.set_destination(source_frame.get_source_address());
-    frame.set_type(0x0800);
-    frame.get_bit_string(send_buffer);
+    new_frame.set_payload(new_packet);
+    new_frame.set_source(macAddress);
+    new_frame.set_destination(source_frame.get_source_address());
+    new_frame.set_type(0x0800);
+    new_frame.get_bit_string(send_buffer);
     send(clientfd, send_buffer, BUFFER_SIZE, 0);
 
   } else {

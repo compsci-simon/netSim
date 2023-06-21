@@ -55,6 +55,7 @@ public:
   void start_listen_thread();
   void handle_frame();
   void handle_packet(Frame frame, IP packet);
+  void arp_query(int target_addr);
   void process_arp(Arp query);
   void process_icmp_packets(ICMP packet);
   void handle_datagram(Frame frame, Datagram datagram);
@@ -64,6 +65,7 @@ public:
   int get_subnet_mask() { return subnet_mask; }
   int get_router_ip() { return router_ip; }
   void router_solicitation();
+  void ping(int target);
 };
 
 #endif

@@ -78,15 +78,21 @@ void Node::handle_frame() {
     }
 
     frame.instantiate_from_bit_string(recv_buffer);
-    if (frame.get_destination_address() == 0x00ffffffffffff ||
-      frame.get_destination_address() == this->macAddress) {
+    if (frame.get_destination_address() == 0x00ffffffffffff 
+        || frame.get_destination_address() == this->macAddress) {
+
       if (frame.get_type() == 0x0800) {
         // IP packet
         IP packet;
+        std::cout << "Received IP packet" << std::endl;
         frame.load_packet(&packet);
         handle_packet(frame, packet);
       } else if (frame.get_type() == 0x0806) {
         // ARP Query
+        Arp query;
+        std::cout << "Received ARP packet" << std::endl;
+        frame.demultiplex(&query);
+        process_arp(query);
       } else {
         std::cerr << "Unknown frame protocol type: " << frame.get_type_string() << std::endl;
       }
@@ -135,16 +141,47 @@ void Node::process_arp(Arp query) {
     frame.multiplex(query);
     frame.get_bit_string(send_buffer);
     send(sockfd, send_buffer, BUFFER_SIZE, 0);
+  } else if (query.get_source_protocol() == this->ipAddress) {
+    if (query.get_target_hardware() == 0) {
+      std::cout << "Dismissing arp query with target hardware set to 0" << std::endl;
+      return;
+    }
+    std::vector<long> pair {query.get_target_protocol(), query.get_target_hardware()};
+    arp_table.push_back(pair);
   } else {
     // Silently dismiss ARP query
     char buf[17] {0};
     IP::address_to_string(query.get_target_protocol(), buf);
-    std::cout << "Received ARP query for " << buf << std::endl;
+    std::cout << "Received ARP query for target " << buf << std::endl;
+    IP::address_to_string(query.get_source_protocol(), buf);
+    std::cout << "Received ARP query for source " << buf << std::endl;
   }
 }
 
+void Node::arp_query(int target_addr) {
+  Frame frame;
+  Arp query;
+
+  query.set_source_hardware(macAddress);
+  query.set_source_protocol(ipAddress);
+  query.set_target_protocol(target_addr);
+
+  frame.multiplex(query);
+  frame.set_destination(0xffffffffffff);
+  frame.set_source(ipAddress);
+  frame.set_type(0x0806);
+  frame.get_bit_string(send_buffer);
+
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
+
+}
+
 void Node::process_icmp_packets(ICMP packet) {
-  if (packet.get_type() == 9) {
+  if (packet.get_type() == 0) {
+    // Echo reply
+    std::cout << "Received echo reply" << std::endl;
+    return;
+  } if (packet.get_type() == 9) {
     // Router advertisement
     if (packet.get_code() == 0) {
       std::cerr << "Received ICMP router advertisement with non-zero code " << packet.get_code() << std::endl;
@@ -165,7 +202,7 @@ void Node::process_icmp_packets(ICMP packet) {
       return;
     }
   } else {
-    std::cerr << "Received ICMP message with unknown type " << packet.get_type() << std::endl;
+    std::cerr << "Received ICMP message with unknown type " << (int) packet.get_type() << std::endl;
     return;
   }
 }
@@ -304,7 +341,6 @@ void Node::dhcp_bind(DHCP_Message message) {
   IP::address_to_string(this->router_ip, buffer);
   std::cout << "Gateway IP " << buffer << std::endl;
   
-  listen = false;
 }
 
 void Node::router_solicitation() {
@@ -326,4 +362,47 @@ void Node::router_solicitation() {
   frame.get_bit_string(send_buffer);
   send(sockfd, send_buffer, BUFFER_SIZE, 0);
 
+}
+
+void Node::ping(int target) {
+  Frame frame;
+  IP packet;
+  ICMP message;
+  long int mac = 0;
+  char buf[17] {0};
+
+  IP::address_to_string(target, buf);
+
+  for (int attempt = 0; attempt < 3; attempt++) {
+    for (int i = 0; i < arp_table.size(); i++) {
+      if (arp_table.at(i).at(0) == target) {
+        mac = arp_table.at(i).at(1);
+      }
+    }
+    if (mac != 0) {
+      break;
+    }
+    arp_query(target);
+    std::cout << "Sending arp query to " << buf << std::endl;
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+  }
+  if (mac == 0) {
+    std::cerr << "Could not obtain mac address for " << buf << std::endl;
+    return;
+  }
+
+  message.set_code(0);
+  message.set_type(8);
+
+  packet.encapsulate(message);
+  packet.set_destination(target);
+  packet.set_source(ipAddress);
+  packet.set_protocol(1);
+
+  frame.set_payload(packet);
+  frame.set_destination(mac);
+  frame.set_source(macAddress);
+  frame.set_type(0x0800);
+  frame.get_bit_string(send_buffer);
+  send(sockfd, send_buffer, BUFFER_SIZE, 0);
 }

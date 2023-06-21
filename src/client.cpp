@@ -1,6 +1,6 @@
 #include <iostream>
 #include <chrono>
-#include "node.h"
+#include "hosts/node.h"
 
 int main(int argc, char* argv[]) {
   // if (argc < 2) {

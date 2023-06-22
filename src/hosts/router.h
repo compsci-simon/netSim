@@ -23,14 +23,15 @@ class DHCP_Server;
 class Router {
 private:
   int sockfd;
+  int ip_addr = 0b11000000'10101000'00000000'00000001;
+  long int macAddress {0};
   struct sockaddr_in serverAddress, clientAddress;
   std::vector<int> clients;
   std::vector<int> threads;
   std::mutex mtx;
-  static void handleConnection(int socketfd, Router *router);
-  int ip_addr = 0b11000000'10101000'00000000'00000001;
-  long int macAddress {0};
   DHCP_Server* dhcp_server;
+
+  static void handleConnection(int socketfd, Router *router);
 public:
   int clientfd;
   unsigned char send_buffer[BUFFER_SIZE] {0};

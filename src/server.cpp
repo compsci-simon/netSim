@@ -1,8 +1,7 @@
-#include "hosts/router.h"
+#include "hosts/switch.h"
 
 int main() {
-  Router router;
-  router.accept_connections();
-  router.handleConnection();
+  Switch s;
+  s.switch_on();
   return 0;
 }

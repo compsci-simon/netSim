@@ -32,7 +32,7 @@ int Node::connect_to_router() {
   // Bind socket to port
   serverAddress.sin_family = AF_INET;
   serverAddress.sin_addr.s_addr = INADDR_ANY;
-  serverAddress.sin_port = htons(port);
+  serverAddress.sin_port = htons(1234);
   if (inet_pton(AF_INET, host, &(serverAddress.sin_addr)) < 0) {
     std::cerr << "Invalid address" << std::endl;
     return 1;
@@ -385,7 +385,7 @@ void Node::ping(int target) {
     }
     arp_query(target);
     std::cout << "Sending arp query to " << buf << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(30));
   }
   if (mac == 0) {
     std::cerr << "Could not obtain mac address for " << buf << std::endl;

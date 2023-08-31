@@ -5,103 +5,63 @@
 #include "../protocols/ip.h"
 #include "../protocols/icmp.h"
 #include "../protocols/datagram.h"
+
+#include "switch.h"
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
 Router::Router() {
   macAddress = 0x0001234455667;
   this->dhcp_server = new DHCP_Server();
   this->dhcp_server->set_router(this);
+  this->network_switch = new Switch();
+  this->network_switch->switch_on();
 }
 
-bool Router::accept_connections() {
-  int addrLen = sizeof(serverAddress);
-  std::vector<std::thread> threads;
-
-  sockfd = socket(AF_INET, SOCK_STREAM, 0);
-  if (sockfd < 0) {
-    std::cerr << "Error creating socket" << std::endl;
-    return false;
-  }
-  // Bind socket to IP and port
-  serverAddress.sin_family = AF_INET;
-  serverAddress.sin_addr.s_addr = INADDR_ANY;
-  serverAddress.sin_port = htons(PORT);
-  if (bind(sockfd, (struct sockaddr *)&serverAddress, addrLen) < 0) {
-    std::cerr << "Error binding socket" << std::endl;
-    return false;
-  }
-
-  if (listen(sockfd, 3) < 0) {
-    std::cerr << "Listen failed" << std::endl;
-    return false;
-  }
-
-  socklen_t client_len = sizeof(clientAddress);
-  std::cout << "Accepting connections" << std::endl;
-  // while (true) {
-  //   int temp = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
-  //   char ipAddress[INET_ADDRSTRLEN];
-  //   inet_ntop(AF_INET, &(serverAddress.sin_addr), ipAddress, INET_ADDRSTRLEN);
-  //   uint16_t port = ntohs(serverAddress.sin_port);
-  //   std::cout << "Accepted connection" << std::endl;
-  //   std::cout << "Address: " << ipAddress << std::endl;
-  //   std::cout << "Port: " << port << std::endl;
-  //   if (temp < 0) {
-  //     std::cerr << "Accept failed" << std::endl;
-  //     return false;
-  //   } else {
-  //     clients.push_back(temp);
-  //     threads.emplace_back(handleConnection, temp, this);
-  //   }
-  // }
-  // for (int i = 0; i < threads.size(); i++) {
-  //   threads.at(i).join();
-  // }
-  clientfd = accept(sockfd, (struct sockaddr *)&clientAddress, &client_len);
-  char ipAddress[INET_ADDRSTRLEN];
-  inet_ntop(AF_INET, &(serverAddress.sin_addr), ipAddress, INET_ADDRSTRLEN);
-  uint16_t port = ntohs(serverAddress.sin_port);
-  std::cout << "Accepted connection" << std::endl;
-  std::cout << "Address: " << ipAddress << std::endl;
-  std::cout << "Port: " << port << std::endl;
-  
-  return true;
+void Router::add_frame_to_queue(Ethernet* frame) {
+  frame_q_mtx.lock();
+  frame_queue.push_back(frame);
+  frame_q_mtx.unlock();
+  std::thread(&Router::interrupt, this, Interrupt::FRAME_RECEIVED);
 }
 
-void Router::handleConnection() {
-  Ethernet frame;
-  int bytesRead = 0;
-  while (true) {
-    memset(recv_buffer, 0, BUFFER_SIZE);
-    bytesRead = read(clientfd, recv_buffer, BUFFER_SIZE);
-    if (bytesRead <= 0) {
+void Router::send_frame_to_switch(Ethernet* frame) {
+  network_switch->send_frame(frame);
+}
+
+void Router::interrupt(Interrupt interrupt) {
+  switch (interrupt) {
+    case FRAME_RECEIVED:
+      std::cout << "Frame received interrupt" << std::endl;
+      frame_q_mtx.lock();
+      Ethernet* frame = frame_queue.back();
+      frame_queue.pop_back();
+      process_frame(frame);
+      free(frame);
+      frame_q_mtx.unlock();
       break;
-    }
-
-    frame.instantiate_from_bit_string(recv_buffer);
-    process_frame(frame);
+    default:
+      std::cerr << "Unknown interrupt" << std::endl;
+      break;
   }
-  
-  close(sockfd);
 }
 
-void Router::process_frame(Ethernet frame) {
-  if (frame.get_destination_address() == 0xffffffffffff || frame.get_destination_address() == macAddress) {
-    if (frame.get_type() == 0x0800) {
+void Router::process_frame(Ethernet* frame) {
+  if (frame->get_destination_address() == 0xffffffffffff || frame->get_destination_address() == macAddress) {
+    if (frame->get_type() == 0x0800) {
       IP packet;
       // Process IP Packet
-      frame.decapsulate(&packet);
-      process_packet(frame, packet);
-    } else if (frame.get_type() == 0x0806) {
+      frame->decapsulate(&packet);
+      process_packet(*frame, packet);
+    } else if (frame->get_type() == 0x0806) {
       // Process ARP Query
       Arp query;
-      frame.decapsulate(&query);
-      process_query(frame, query);
+      frame->decapsulate(&query);
+      process_query(*frame, query);
     } else {
-      std::cerr << "Received frame with unknow protocol " << frame.get_type_string() << std::endl;
+      std::cerr << "Received frame with unknow protocol " << frame->get_type_string() << std::endl;
     }
   } else {
-    std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Ethernet destination address = " << frame.address_to_string(false) << std::endl;
+    std::cerr << "Received a frame with a destination not equal to router MAC or broadcast MAC. Ethernet destination address = " << frame->address_to_string(false) << std::endl;
   }
 }
 
@@ -217,38 +177,6 @@ void Router::process_datagram(Ethernet frame, Datagram datagram) {
     std::cerr << "datagram received with unknown destination port" << datagram.get_destination_port() << std::endl;
     return;
   }
-}
-
-void Router::handleConnection(int socketfd, Router *router) {
-  std::cout << "Handling connection for socket " << socketfd << std::endl;
-  char buffer[BUFFER_SIZE];
-  Ethernet ethernet_frame;
-  int bytesRead = 0;
-
-  while (true) {
-    memset(buffer, 0, BUFFER_SIZE);
-    bytesRead = read(socketfd, buffer, BUFFER_SIZE);
-    if (bytesRead < 0)  { 
-      std::cerr << "Error reading value" << std::endl;
-      break;
-    }
-
-    std::cout << "Received from client " << socketfd << ": " << buffer << std::endl;
-    if (strcmp(buffer, "quit") == 0) {
-      break;
-    }
-    router->broadcast(buffer);
-  }
-  close(socketfd);
-}
-
-void Router::broadcast(char *msg) {
-  mtx.lock();
-  for (int i = 0; i < clients.size(); i++) {
-    int sfd = clients.at(i);
-    send(sfd, msg, strlen(msg), 0);
-  }
-  mtx.unlock();
 }
 
 /*

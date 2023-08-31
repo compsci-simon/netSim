@@ -14,6 +14,15 @@ Switch::Switch() {
   frame_queue = std::queue<void*>();
 }
 
+Switch::~Switch() {
+  ON = false;
+  while (frame_queue.size() > 0) {
+    void* frame = frame_queue.back();
+    frame_queue.pop();
+    free(frame);
+  }
+}
+
 void Switch::switch_on() {
   sockaddr_in server_address;
   sockaddr client_address;
@@ -41,8 +50,9 @@ void Switch::switch_on() {
     return;
   }
 
+  ON = true;
   std::cout << "Accepting connections" << std::endl;
-  while (true) {
+  while (ON) {
     int socket = accept(server_sock, &client_address, &addr_length);
     char ipAddress[INET_ADDRSTRLEN];
     std::cout << "Accepted connection" << std::endl;
@@ -77,7 +87,7 @@ void Switch::handle_port_traffic(int socket) {
   const auto BUFFER_SIZE {13734};
   unsigned char buffer[BUFFER_SIZE] {0};
   auto bytesRead {0};
-  while (true) {
+  while (ON) {
     memset(buffer, 0, BUFFER_SIZE);
     bytesRead = read(socket, buffer, BUFFER_SIZE);
     if (bytesRead <= 0) {
@@ -87,6 +97,5 @@ void Switch::handle_port_traffic(int socket) {
     frame->instantiate_from_bit_string(buffer);
     std::cout << "Received frame from " << frame->address_to_string(true) << " to " << frame->address_to_string(false) << std::endl;
     frame_queue.push(frame);
-    break;
   }
 }

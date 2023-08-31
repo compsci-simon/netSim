@@ -13,11 +13,12 @@ struct Port {
 class Switch {
   std::vector<Port*> ports;
   std::queue<void*> frame_queue;
+  bool ON  {false};
 public:
   Switch();
+  ~Switch();
   void switch_on();
   void handle_port_traffic(int socket);
-  void test();
 };
 
 #endif

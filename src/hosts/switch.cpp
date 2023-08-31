@@ -12,6 +12,7 @@
 
 Switch::Switch() {
   frame_queue = std::queue<void*>();
+  send_buffer = new unsigned char[13734] {0};
 }
 
 Switch::~Switch() {
@@ -101,10 +102,67 @@ void Switch::handle_port_traffic(int socket) {
     }
     Ethernet* frame = new Ethernet();
     frame->instantiate_from_bit_string(buffer);
-    std::cout << "Received frame from " << frame->address_to_string(true) << " to " << frame->address_to_string(false) << std::endl;
+    register_in_arp_table(frame);
+    std::cout << "Received frame from " << frame->address_to_string(false) << " to " << frame->address_to_string(true) << std::endl;
     frame_q_mtx.lock();
     frame_queue.push(frame);
     frame_q_mtx.unlock();
     break;
   }
+}
+
+void Switch::register_in_arp_table(Ethernet* frame) {
+  long source_mac = frame->get_source_address();
+  bool found = false;
+  arp_table_mtx.lock();
+  for (int i = 0; i < mac_table.size(); i++) {
+    if (mac_table.at(i).at(0) == source_mac) {
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    std::vector<long> entry;
+    entry.push_back(source_mac);
+    entry.push_back(portId++);
+    mac_table.push_back(entry);
+  }
+  arp_table_mtx.unlock();
+}
+
+Ethernet* Switch::get_frame() {
+  Ethernet* frame = nullptr;
+  frame_q_mtx.lock();
+  if (frame_queue.size() > 0) {
+    frame = (Ethernet*) frame_queue.front();
+    frame_queue.pop();
+  }
+  frame_q_mtx.unlock();
+  return frame;
+}
+
+void Switch::send_frame(Ethernet* frame) {
+  long destination_address = frame->get_destination_address();
+  bool found = false;
+  arp_table_mtx.lock();
+  for (int i = 0; i < mac_table.size(); i++) {
+    if (mac_table.at(i).at(0) == destination_address) {
+      int port = mac_table.at(i).at(1);
+      ports_mtx.lock();
+      memset(send_buffer, 0, 13734);
+      frame->get_bit_string(send_buffer);
+      send(ports.at(port)->socket, send_buffer, 13734, 0);
+      ports_mtx.unlock();
+      found = true;
+      break;
+    }
+  }
+  if (!found) {
+    for (int i = 0; i < ports.size(); i++) {
+      memset(send_buffer, 0, 13734);
+      frame->get_bit_string(send_buffer);
+      send(ports.at(i)->socket, send_buffer, 13734, 0);
+    }
+  }
+  arp_table_mtx.unlock();
 }

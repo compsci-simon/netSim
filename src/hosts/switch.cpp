@@ -10,14 +10,8 @@
 #include "../protocols/ethernet.h"
 
 
-void f() {
-  std::cout << "test" << std::endl;
-}
-
-
 Switch::Switch() {
   frame_queue = std::queue<void*>();
-  ports = std::vector<Port>();
 }
 
 void Switch::switch_on() {
@@ -56,21 +50,25 @@ void Switch::switch_on() {
       std::cerr << "Accept failed" << std::endl;
       break;
     } else {
-      Port port;
-      port.socket = socket;
-      // port.thread = std::thread([this, socket]() {
-      //   this->handle_port_traffic(socket);
-      // });
-      // handle_port_traffic(socket);
-      // std::thread(&Switch::test, this);
-      port.thread = std::thread(f);
+      Port* port = new Port();
+      port->MAC = 0;
+      port->socket = socket;
+      std::cout << "Creating thread" << std::endl;
+      port->thread = std::thread([this, socket](){
+        this->handle_port_traffic(socket);
+      });
+      std::cout << "Created thread" << std::endl;
       ports.push_back(port);
       break;
     }
   }
-  for (int i = 0; i < ports.size(); i++) {
-    ports.at(i).thread.join();
-    close(ports.at(i).socket);
+  while (ports.size() > 0) {
+    int lastIndex = ports.size() - 1;
+    ports.at(lastIndex)->thread.join();
+    close(ports.at(lastIndex)->socket);
+    Port* x = ports.at(lastIndex);
+    free(x);
+    ports.pop_back();
   }
   close(server_sock);
 }
@@ -89,9 +87,6 @@ void Switch::handle_port_traffic(int socket) {
     frame->instantiate_from_bit_string(buffer);
     std::cout << "Received frame from " << frame->address_to_string(true) << " to " << frame->address_to_string(false) << std::endl;
     frame_queue.push(frame);
+    break;
   }
-}
-
-void Switch::test() {
-  std::cout << "Hello from thread " << std::this_thread::get_id() << std::endl;
 }

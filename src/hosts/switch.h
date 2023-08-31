@@ -11,7 +11,7 @@ struct Port {
 };
 
 class Switch {
-  std::vector<Port> ports;
+  std::vector<Port*> ports;
   std::queue<void*> frame_queue;
 public:
   Switch();

@@ -16,11 +16,13 @@ Switch::Switch() {
 
 Switch::~Switch() {
   ON = false;
+  frame_q_mtx.lock();
   while (frame_queue.size() > 0) {
-    void* frame = frame_queue.back();
+    Ethernet* frame = (Ethernet*) frame_queue.back();
     frame_queue.pop();
     free(frame);
   }
+  frame_q_mtx.unlock();
 }
 
 void Switch::switch_on() {
@@ -68,10 +70,13 @@ void Switch::switch_on() {
         this->handle_port_traffic(socket);
       });
       std::cout << "Created thread" << std::endl;
+      ports_mtx.lock();
       ports.push_back(port);
+      ports_mtx.unlock();
       break;
     }
   }
+  ports_mtx.lock();
   while (ports.size() > 0) {
     int lastIndex = ports.size() - 1;
     ports.at(lastIndex)->thread.join();
@@ -80,6 +85,7 @@ void Switch::switch_on() {
     free(x);
     ports.pop_back();
   }
+  ports_mtx.unlock();
   close(server_sock);
 }
 
@@ -96,6 +102,9 @@ void Switch::handle_port_traffic(int socket) {
     Ethernet* frame = new Ethernet();
     frame->instantiate_from_bit_string(buffer);
     std::cout << "Received frame from " << frame->address_to_string(true) << " to " << frame->address_to_string(false) << std::endl;
+    frame_q_mtx.lock();
     frame_queue.push(frame);
+    frame_q_mtx.unlock();
+    break;
   }
 }

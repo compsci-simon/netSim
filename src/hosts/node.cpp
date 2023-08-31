@@ -385,7 +385,7 @@ void Node::ping(int target) {
     }
     arp_query(target);
     std::cout << "Sending arp query to " << buf << std::endl;
-    std::this_thread::sleep_for(std::chrono::seconds(30));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
   }
   if (mac == 0) {
     std::cerr << "Could not obtain mac address for " << buf << std::endl;

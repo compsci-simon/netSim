@@ -3,6 +3,7 @@
 #include <vector>
 #include <thread>
 #include <queue>
+#include <mutex>
 
 struct Port {
   long MAC {0};
@@ -14,6 +15,8 @@ class Switch {
   std::vector<Port*> ports;
   std::queue<void*> frame_queue;
   bool ON  {false};
+  std::mutex ports_mtx;
+  std::mutex frame_q_mtx;
 public:
   Switch();
   ~Switch();

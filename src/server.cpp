@@ -1,7 +1,8 @@
+#include "hosts/router.h"
 #include "hosts/switch.h"
 
 int main() {
-  Switch s;
-  s.switch_on();
+  Router* r = new Router();
+  Switch s {r};
   return 0;
 }

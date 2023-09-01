@@ -17,13 +17,6 @@ Router::Router() {
   this->network_switch->switch_on();
 }
 
-void Router::add_frame_to_queue(Ethernet* frame) {
-  frame_q_mtx.lock();
-  frame_queue.push_back(frame);
-  frame_q_mtx.unlock();
-  std::thread(&Router::interrupt, this, Interrupt::FRAME_RECEIVED);
-}
-
 void Router::send_frame_to_switch(Ethernet* frame) {
   network_switch->send_frame(frame);
 }
@@ -31,16 +24,10 @@ void Router::send_frame_to_switch(Ethernet* frame) {
 void Router::interrupt(Interrupt interrupt) {
   switch (interrupt) {
     case FRAME_RECEIVED:
-      std::cout << "Frame received interrupt" << std::endl;
-      frame_q_mtx.lock();
-      Ethernet* frame = frame_queue.back();
-      frame_queue.pop_back();
+      std::cout << "Frame interrupt received" << std::endl;
+      Ethernet* frame = network_switch->get_frame();
       process_frame(frame);
       free(frame);
-      frame_q_mtx.unlock();
-      break;
-    default:
-      std::cerr << "Unknown interrupt" << std::endl;
       break;
   }
 }
@@ -109,7 +96,7 @@ void Router::process_query(Ethernet* frame, Arp query) {
 void Router::process_message(Ethernet* source_frame, ICMP message) {
   ICMP new_message;
   IP new_packet, old_packet;
-  Ethernet* new_frame;
+  Ethernet* new_frame = new Ethernet();
   if (message.get_type() == 0) {
     // PING Reply
     source_frame->decapsulate(&old_packet);

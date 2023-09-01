@@ -28,13 +28,11 @@ enum Interrupt {
 
 class Router {
 private:
-  int sockfd;
   int ip_addr = 0b11000000'10101000'00000000'00000001;
   long int macAddress {0};
   DHCP_Server* dhcp_server;
   Switch* network_switch;
   std::vector<Ethernet*> frame_queue;
-  std::mutex frame_q_mtx;
 public:
   Router();
   int get_ip_addr() { return ip_addr; }
@@ -45,7 +43,6 @@ public:
   void process_message(Ethernet* frame, ICMP message);
   void process_datagram(Ethernet* frame, Datagram datagram);
   long get_mac_address() { return macAddress; }
-  void add_frame_to_queue(Ethernet* frame);
   void interrupt(Interrupt interrupt);
   void send_frame_to_switch(Ethernet* frame);
 };

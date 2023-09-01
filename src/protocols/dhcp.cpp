@@ -30,7 +30,7 @@ void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
 
     Datagram datagram;
     IP packet;
-    Ethernet frame;
+    Ethernet* frame = new Ethernet();
 
     std::cout << "DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED." << std::endl;
     int base_ip = 0b11000000'10101000'00000000'00000000;
@@ -65,12 +65,12 @@ void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
     packet.set_source(this->router->get_ip_addr());
     packet.set_protocol(17);
 
-    frame.set_source_address(this->router->get_mac_address());
-    frame.set_destination_address(source_frame.get_source_address());
-    frame.encapsulate(packet);
-    frame.set_type(0x0800);
-    frame.get_bit_string(this->router->send_buffer);
-    send(this->router->clientfd, this->router->send_buffer, BUFFER_SIZE, 0);
+    frame->set_source_address(this->router->get_mac_address());
+    frame->set_destination_address(source_frame.get_source_address());
+    frame->encapsulate(packet);
+    frame->set_type(0x0800);
+    this->router->send_frame(frame);
+    free(frame);
 
   } else if (message.is_broadcast() && message.get_xid() == last_xid 
             && message.option_is_set(53) && message.get_option(53) == 3) {
@@ -78,7 +78,7 @@ void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
 
     Datagram datagram;
     IP packet;
-    Ethernet frame;
+    Ethernet* frame = new Ethernet();
 
     std::cout << "DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED." << std::endl;
 
@@ -96,12 +96,12 @@ void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
     packet.set_source(this->router->get_ip_addr());
     packet.set_protocol(17);
 
-    frame.set_source_address(this->router->get_mac_address());
-    frame.set_destination_address(source_frame.get_source_address());
-    frame.encapsulate(packet);
-    frame.set_type(0x0800);
-    frame.get_bit_string(this->router->send_buffer);
-    send(this->router->clientfd, this->router->send_buffer, BUFFER_SIZE, 0);
+    frame->set_source_address(this->router->get_mac_address());
+    frame->set_destination_address(source_frame.get_source_address());
+    frame->encapsulate(packet);
+    frame->set_type(0x0800);
+    this->router->send_frame(frame);
+    free(frame);
   }
 }
 

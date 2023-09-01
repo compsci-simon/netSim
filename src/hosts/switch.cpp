@@ -59,7 +59,6 @@ void Switch::switch_on() {
   std::cout << "Accepting connections" << std::endl;
   while (ON) {
     int socket = accept(server_sock, &client_address, &addr_length);
-    char ipAddress[INET_ADDRSTRLEN];
     std::cout << "Accepted connection" << std::endl;
     if (socket < 0) {
       std::cerr << "Accept failed" << std::endl;
@@ -109,7 +108,9 @@ void Switch::handle_port_traffic(int socket) {
     frame_q_mtx.lock();
     frame_queue.push(frame);
     frame_q_mtx.unlock();
-    router->interrupt(Interrupt::FRAME_RECEIVED);
+    std::thread([this]() {
+      this->router->interrupt(Interrupt::FRAME_RECEIVED);
+    });
     break;
   }
 }

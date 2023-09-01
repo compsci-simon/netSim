@@ -7,12 +7,14 @@
 #include <thread>
 
 #include "switch.h"
+#include "router.h"
 #include "../protocols/ethernet.h"
 
 
-Switch::Switch() {
+Switch::Switch(Router* router) {
   frame_queue = std::queue<void*>();
   send_buffer = new unsigned char[13734] {0};
+  this->router = router;
 }
 
 Switch::~Switch() {
@@ -107,6 +109,7 @@ void Switch::handle_port_traffic(int socket) {
     frame_q_mtx.lock();
     frame_queue.push(frame);
     frame_q_mtx.unlock();
+    router->interrupt(Interrupt::FRAME_RECEIVED);
     break;
   }
 }

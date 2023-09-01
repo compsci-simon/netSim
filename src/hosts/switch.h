@@ -6,6 +6,7 @@
 #include <mutex>
 
 class Ethernet;
+class Router;
 
 struct Port {
   long MAC {0};
@@ -23,8 +24,9 @@ class Switch {
   std::vector<std::vector<long> > mac_table;
   int portId {0};
   unsigned char* send_buffer;
+  Router* router;
 public:
-  Switch();
+  Switch(Router* router);
   ~Switch();
   void switch_on();
   void handle_port_traffic(int socket);

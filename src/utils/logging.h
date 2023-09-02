@@ -7,6 +7,7 @@ void log(std::string message);
 
 class Logger {
   std::string hostName;
+public:
   Logger(std::string hostName) {
     this->hostName = hostName;
   }

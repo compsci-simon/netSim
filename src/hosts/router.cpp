@@ -28,9 +28,7 @@ void Router::interrupt(Interrupt interrupt) {
   switch (interrupt) {
     case FRAME_RECEIVED:
       Ethernet* frame = network_switch->get_frame();
-      logger->log("Received frame");
       process_frame(frame);
-      logger->log("Processed frame");
       free(frame);
       break;
   }

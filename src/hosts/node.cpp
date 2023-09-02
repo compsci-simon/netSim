@@ -24,7 +24,7 @@ Node::Node (int port, char *host, const char* name) {
     macAddress = macAddress << 8;
     macAddress += dis(gen);
   }
-  macAddress = 0x123456789abc;
+  macAddress &= 0x0000ffffffffffff;
   logger = new Logger(name);
 };
 
@@ -110,7 +110,7 @@ void Node::handle_frame() {
       } else if (frame.get_type() == 0x0806) {
         // ARP Query
         Arp query;
-        std::cout << "Received ARP packet" << std::endl;
+        logger->log("Received ARP packet");
         frame.decapsulate(&query);
         process_arp(query);
       } else {
@@ -119,6 +119,8 @@ void Node::handle_frame() {
     } else {
       std::string s = "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address. Ethernet address = ";
       s.append((const char*)frame.address_to_string(false));
+      s.append(". Hardware address = ");
+      s.append(Ethernet::long_to_address(frame.get_destination_address()));
       logger->log(s.c_str());
       return;
     }
@@ -205,7 +207,7 @@ void Node::arp_query(int target_addr) {
 void Node::process_icmp_packets(ICMP packet) {
   if (packet.get_type() == 0) {
     // Echo reply
-    std::cout << "Received echo reply" << std::endl;
+    logger->log("Received echo reply");
     return;
   } if (packet.get_type() == 9) {
     // Router advertisement
@@ -268,11 +270,13 @@ void Node::process_dhcp_message(Ethernet frame, DHCP_Message message) {
     this->set_subnet_mask(message.get_option(1));
     this->set_router_ip(message.get_option(3));
     this->dhcp_request(frame, message);
+    logger->log("DHCP OFFER RECEIVED");
   } else if (message.get_option(53) == 4) {
     // DHCP NAK
   } else if (message.get_option(53) == 5) {
     // DHCP ACK
     this->dhcp_bind(message);
+    logger->log("DHCP BINDING COMPLETE");
   }
 }
 
@@ -344,7 +348,7 @@ void Node::dhcp_bind(DHCP_Message message) {
   Arp query;
   char buffer[17] {0};
 
-  std::cout << "BINDING. PERFORMING ARP QUERY..." << std::endl;
+  logger->log("BINDING. PERFORMING ARP QUERY...");
   
   query.set_operation(1);
   query.set_source_hardware(this->macAddress);

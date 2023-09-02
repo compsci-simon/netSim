@@ -21,6 +21,7 @@ class ICMP;
 class Datagram;
 class DHCP_Server;
 class Switch;
+class Logger;
 
 enum Interrupt {
   FRAME_RECEIVED
@@ -33,6 +34,7 @@ private:
   DHCP_Server* dhcp_server;
   Switch* network_switch;
   std::vector<Ethernet*> frame_queue;
+  Logger* logger;
 public:
   Router();
   int get_ip_addr() { return ip_addr; }

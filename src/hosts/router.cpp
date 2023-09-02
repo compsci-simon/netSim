@@ -5,15 +5,18 @@
 #include "../protocols/ip.h"
 #include "../protocols/icmp.h"
 #include "../protocols/datagram.h"
+#include "../utils/logging.h"
 
 #include "switch.h"
 // const unsigned char IP[4] = { 192, 168, 0, 1 };
 
 Router::Router() {
+  this->logger = new Logger("ROUTER");
   macAddress = 0x0001234455667;
   this->dhcp_server = new DHCP_Server();
   this->dhcp_server->set_router(this);
   this->network_switch = new Switch(this);
+  logger->log("Router initialized");
   this->network_switch->switch_on();
 }
 
@@ -24,9 +27,10 @@ void Router::send_frame_to_switch(Ethernet* frame) {
 void Router::interrupt(Interrupt interrupt) {
   switch (interrupt) {
     case FRAME_RECEIVED:
-      std::cout << "Frame interrupt received" << std::endl;
       Ethernet* frame = network_switch->get_frame();
+      logger->log("Received frame");
       process_frame(frame);
+      logger->log("Processed frame");
       free(frame);
       break;
   }
@@ -76,8 +80,10 @@ void Router::process_packet(Ethernet* frame, IP packet) {
 
 void Router::process_query(Ethernet* frame, Arp query) {
   char buf[17] {0};
+  std::string s = "Received ARP query targetted for ";
   IP::address_to_string(query.get_target_protocol(), buf);
-  std::cout << "Received ARP query targetted for " << buf << std::endl;
+  s.append((const char*)buf);
+  logger->log(s.c_str());
   if (query.get_target_protocol() == ip_addr) {
     Ethernet frame;
     query.set_target_hardware(macAddress);
@@ -87,9 +93,8 @@ void Router::process_query(Ethernet* frame, Arp query) {
     frame.set_source_address(macAddress);
     frame.set_type(0x0806);
     send_frame(&frame);
-    std::cout << "Sending ARP reply" << std::endl;
   } else {
-    std::cout << "Dismissing ARP query." << std::endl;
+    logger->log("Dismissing ARP query.");
   }
 }
 

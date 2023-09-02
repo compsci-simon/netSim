@@ -45,6 +45,7 @@ const int DHCP_OPTIONS_LENGTH = 1232;
 
 class Router;
 class Ethernet;
+class Logger;
 
 class DHCP_Message {
   unsigned char op;
@@ -92,6 +93,7 @@ class DHCP_Server {
   unsigned char available_ips[255] {0};
   int last_xid = 0;
   Router* router;
+  Logger* logger;
 public:
   DHCP_Server();
   DHCP_Server(Router* router);

@@ -1,9 +1,11 @@
-#include "../hosts/router.h"
-#include "dhcp.h"
-#include "datagram.h"
-#include "ip.h"
-#include "ethernet.h"
 #include <iostream>
+
+#include "dhcp.h"
+#include "ip.h"
+#include "datagram.h"
+#include "ethernet.h"
+#include "../hosts/router.h"
+#include "../utils/logging.h"
 
 DHCP_Server::DHCP_Server() {
   for (int i = 0; i < 255; i++) {
@@ -11,6 +13,7 @@ DHCP_Server::DHCP_Server() {
   }
   available_ips[0] = 0;
   available_ips[1] = 0;
+  logger = new Logger("DHCP SERVER");
 }
 
 DHCP_Server::DHCP_Server(Router* router) {
@@ -32,7 +35,7 @@ void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
     IP packet;
     Ethernet* frame = new Ethernet();
 
-    std::cout << "DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED." << std::endl;
+    logger->log("DHCP DISCOVER RECEIVED. DHCP OFFER BEING RETURNED.");
     int base_ip = 0b11000000'10101000'00000000'00000000;
     int new_ip = base_ip;
 
@@ -80,7 +83,7 @@ void DHCP_Server::handle_message(Ethernet source_frame, DHCP_Message message) {
     IP packet;
     Ethernet* frame = new Ethernet();
 
-    std::cout << "DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED." << std::endl;
+    logger->log("DHCP REQUEST RECEIVED. DHCP ACK BEING RETURNED.");
 
     message.clear_options();
     message.set_option(1, 4, 0xffffff00);

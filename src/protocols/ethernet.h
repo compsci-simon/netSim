@@ -24,7 +24,6 @@ public:
   void load_frame_from_string(unsigned char* frame_string);
   void get_bit_string(unsigned char* buffer);
   void instantiate_from_bit_string(unsigned char* buffer);
-
   unsigned char* address_to_string(bool source);
   unsigned char* get_type_string();
   short int get_type() { return type; }
@@ -33,5 +32,6 @@ public:
   void set_type(short int t) { type = t; }
   void set_source_address(long int source) { source_address = source; }
   void set_destination_address(long int destination) { destination_address = destination; }
+  static std::string long_to_address(long address);
 };
 #endif

@@ -1,4 +1,6 @@
 #include <iostream>
+#include <string>
+
 #include "ethernet.h"
 #include "ip.h"
 #include "arp.h"
@@ -106,6 +108,23 @@ unsigned char* Ethernet::address_to_string(bool source) {
     pos += 2;
   }
   return address_string;
+}
+
+std::string Ethernet::long_to_address(long address) {
+  unsigned char buffer[18] {0};
+  unsigned char octetVal;
+  int pos = 0;
+
+  for (int byte = 0; byte < 6; byte++) {
+    octetVal = (unsigned char) ((address >> ((5 - byte)*8)) & 0xff);
+    if (byte != 0) {
+      buffer[pos++] = ':';
+    }
+    byte_to_hex(buffer+(byte*3), octetVal);
+    pos += 2;
+  }
+  std::string s {(const char*)buffer};
+  return s;
 }
 
 /*

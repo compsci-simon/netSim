@@ -18,6 +18,7 @@ class Ethernet;
 class Arp;
 class Datagram;
 class DHCP_Message;
+class Logger;
 
 class Node {
   int sockfd;
@@ -35,17 +36,11 @@ class Node {
   std::thread receive_thread;
   std::vector<std::vector<long>> arp_table;
   bool perform_router_discover = true;
-
   int sendMessageToServer(std::string message);
   void receive_messages_from_server();
+  Logger* logger;
 public:
-  Node(int port, char *host, const char* name) {
-    this->port = port;
-    this->host = host;
-    this->name = name;
-    // generate_mac_address(macAddress);
-    macAddress = 0x00887766554433;
-  };
+  Node(int port, char *host, const char* name);
   int connect_to_router();
   void dhcp_discover();
   void dhcp_request(Ethernet source, DHCP_Message message);

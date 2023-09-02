@@ -1,4 +1,5 @@
 #include <chrono>
+#include <random>
 
 #include "node.h"
 #include "../utils/logging.h"
@@ -9,6 +10,23 @@
 #include "../protocols/icmp.h"
 #include "../protocols/datagram.h"
 #include "../protocols/dhcp.h"
+#include "../utils/logging.h"
+
+Node::Node (int port, char *host, const char* name) {
+  this->port = port;
+  this->host = host;
+  this->name = name;
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<int> dis(0, 15);
+  macAddress = 0;
+  for (int i = 0; i < 12; i++) {
+    macAddress = macAddress << 8;
+    macAddress += dis(gen);
+  }
+  macAddress = 0x123456789abc;
+  logger = new Logger(name);
+};
 
 int Node::sendMessageToServer(std::string message) {
   return 0;
@@ -48,8 +66,9 @@ int Node::connect_to_router() {
   }
 
 void Node::disconnect() {
-  receive_thread.join();
+  listen = false;
   close(sockfd);
+  receive_thread.join();
 }
 
 /*
@@ -85,7 +104,7 @@ void Node::handle_frame() {
       if (frame.get_type() == 0x0800) {
         // IP packet
         IP packet;
-        std::cout << "Received IP packet" << std::endl;
+        logger->log("Received IP packet");
         frame.decapsulate(&packet);
         handle_packet(frame, packet);
       } else if (frame.get_type() == 0x0806) {
@@ -98,7 +117,9 @@ void Node::handle_frame() {
         std::cerr << "Unknown frame protocol type: " << frame.get_type_string() << std::endl;
       }
     } else {
-      std::cout << "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address. Ethernet address = " << frame.address_to_string(false) << std::endl;
+      std::string s = "Received a frame but discared the frame as it's destination address is not our macAddress or the broadcast address. Ethernet address = ";
+      s.append((const char*)frame.address_to_string(false));
+      logger->log(s.c_str());
       return;
     }
   }
@@ -144,7 +165,7 @@ void Node::process_arp(Arp query) {
     send(sockfd, send_buffer, BUFFER_SIZE, 0);
   } else if (query.get_source_protocol() == this->ipAddress) {
     if (query.get_target_hardware() == 0) {
-      std::cout << "Dismissing arp query with target hardware set to 0" << std::endl;
+      logger->log("Dismissing arp query with target hardware set to 0");
       return;
     }
     std::vector<long> pair {query.get_target_protocol(), query.get_target_hardware()};
@@ -153,9 +174,13 @@ void Node::process_arp(Arp query) {
     // Silently dismiss ARP query
     char buf[17] {0};
     IP::address_to_string(query.get_target_protocol(), buf);
-    std::cout << "Received ARP query for target " << buf << std::endl;
+    std::string s = "Received ARP query for target ";
+    s.append(buf);
+    logger->log(s.c_str());
     IP::address_to_string(query.get_source_protocol(), buf);
-    std::cout << "Received ARP query for source " << buf << std::endl;
+    s = "Received ARP query for source ";
+    s.append(buf);
+    logger->log(s.c_str());
   }
 }
 
@@ -294,7 +319,7 @@ void Node::dhcp_request(Ethernet source_frame, DHCP_Message message) {
   IP packet;
   Ethernet frame;
 
-  std::cout << "IN REQUESTING STATE" << std::endl;
+  logger->log("IN REQUESTING STATE");
   message.clear_options();
   message.set_option(53, 1, 3);
   datagram.set_source_port(68);
@@ -336,12 +361,17 @@ void Node::dhcp_bind(DHCP_Message message) {
 
   std::this_thread::sleep_for(std::chrono::seconds(3));
   IP::address_to_string(this->ipAddress, buffer);
-  std::cout << "IN BINDING STATE. IP address accepted: " << buffer << std::endl;
+  std::string s = "IP address accepted: ";
+  s.append(buffer);
+  logger->log(s.c_str());
   IP::address_to_string(this->subnet_mask, buffer);
-  std::cout << "subnet mask " << buffer << std::endl;
+  s = "Subnet mask: ";
+  s.append(buffer);
+  logger->log(s.c_str());
   IP::address_to_string(this->router_ip, buffer);
-  std::cout << "Gateway IP " << buffer << std::endl;
-  
+  s = "Gatewat IP: ";
+  s.append(buffer);
+  logger->log(s.c_str());
 }
 
 void Node::router_solicitation() {
@@ -384,7 +414,9 @@ void Node::ping(int target) {
       break;
     }
     arp_query(target);
-    std::cout << "Sending arp query to " << buf << std::endl;
+    std::string s = "Sending ARP query to ";
+    s.append(buf);
+    logger->log(s.c_str());
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
   if (mac == 0) {

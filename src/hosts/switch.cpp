@@ -95,24 +95,26 @@ void Switch::handle_port_traffic(int socket) {
   const auto BUFFER_SIZE {13734};
   unsigned char buffer[BUFFER_SIZE] {0};
   auto bytesRead {0};
+  Ethernet* frame = nullptr;
+  std::thread interrupt_thread;
   while (ON) {
     memset(buffer, 0, BUFFER_SIZE);
     bytesRead = read(socket, buffer, BUFFER_SIZE);
     if (bytesRead <= 0) {
       break;
     }
-    Ethernet* frame = new Ethernet();
+    frame = new Ethernet();
     frame->instantiate_from_bit_string(buffer);
     register_in_arp_table(frame);
     std::cout << "Received frame from " << frame->address_to_string(false) << " to " << frame->address_to_string(true) << std::endl;
     frame_q_mtx.lock();
     frame_queue.push(frame);
     frame_q_mtx.unlock();
-    std::thread([this]() {
+    interrupt_thread = std::thread([this]() {
       this->router->interrupt(Interrupt::FRAME_RECEIVED);
     });
-    break;
   }
+  interrupt_thread.join();
 }
 
 void Switch::register_in_arp_table(Ethernet* frame) {
@@ -152,11 +154,11 @@ void Switch::send_frame(Ethernet* frame) {
   for (int i = 0; i < mac_table.size(); i++) {
     if (mac_table.at(i).at(0) == destination_address) {
       int port = mac_table.at(i).at(1);
-      ports_mtx.lock();
+      // ports_mtx.lock();
       memset(send_buffer, 0, 13734);
       frame->get_bit_string(send_buffer);
       send(ports.at(port)->socket, send_buffer, 13734, 0);
-      ports_mtx.unlock();
+      // ports_mtx.unlock();
       found = true;
       break;
     }

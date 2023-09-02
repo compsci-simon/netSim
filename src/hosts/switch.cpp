@@ -5,16 +5,19 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <string>
 
 #include "switch.h"
 #include "router.h"
 #include "../protocols/ethernet.h"
+#include "../utils/logging.h"
 
 
 Switch::Switch(Router* router) {
   frame_queue = std::queue<void*>();
   send_buffer = new unsigned char[13734] {0};
   this->router = router;
+  logger = new Logger("SWITCH");
 }
 
 Switch::~Switch() {
@@ -56,10 +59,10 @@ void Switch::switch_on() {
   }
 
   ON = true;
-  std::cout << "Accepting connections" << std::endl;
+  logger->log("Accepting connections");
   while (ON) {
     int socket = accept(server_sock, &client_address, &addr_length);
-    std::cout << "Accepted connection" << std::endl;
+    logger->log("Accepted connection");
     if (socket < 0) {
       std::cerr << "Accept failed" << std::endl;
       break;
@@ -67,11 +70,9 @@ void Switch::switch_on() {
       Port* port = new Port();
       port->MAC = 0;
       port->socket = socket;
-      std::cout << "Creating thread" << std::endl;
       port->thread = std::thread([this, socket](){
         this->handle_port_traffic(socket);
       });
-      std::cout << "Created thread" << std::endl;
       ports_mtx.lock();
       ports.push_back(port);
       ports_mtx.unlock();
@@ -106,7 +107,11 @@ void Switch::handle_port_traffic(int socket) {
     frame = new Ethernet();
     frame->instantiate_from_bit_string(buffer);
     register_in_arp_table(frame);
-    std::cout << "Received frame from " << frame->address_to_string(false) << " to " << frame->address_to_string(true) << std::endl;
+    std::string s = "Received frame from ";
+    s.append((const char*) frame->address_to_string(true));
+    s.append(" to ");
+    s.append((const char*) frame->address_to_string(false));
+    logger->log(s.c_str());
     frame_q_mtx.lock();
     frame_queue.push(frame);
     frame_q_mtx.unlock();

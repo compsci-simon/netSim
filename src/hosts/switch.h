@@ -1,5 +1,6 @@
 #ifndef _SWITCH_H_
 #define _SWITCH_H_
+
 #include <vector>
 #include <thread>
 #include <queue>
@@ -7,6 +8,7 @@
 
 class Ethernet;
 class Router;
+class Logger;
 
 struct Port {
   long MAC {0};
@@ -25,6 +27,7 @@ class Switch {
   int portId {0};
   unsigned char* send_buffer;
   Router* router;
+  Logger* logger;
 public:
   Switch(Router* router);
   ~Switch();

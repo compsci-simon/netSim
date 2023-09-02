@@ -96,7 +96,7 @@ void Switch::handle_port_traffic(int socket) {
   unsigned char buffer[BUFFER_SIZE] {0};
   auto bytesRead {0};
   Ethernet* frame = nullptr;
-  std::thread interrupt_thread;
+  std::vector<std::thread> interrupt_thread_vec;
   while (ON) {
     memset(buffer, 0, BUFFER_SIZE);
     bytesRead = read(socket, buffer, BUFFER_SIZE);
@@ -110,11 +110,13 @@ void Switch::handle_port_traffic(int socket) {
     frame_q_mtx.lock();
     frame_queue.push(frame);
     frame_q_mtx.unlock();
-    interrupt_thread = std::thread([this]() {
+    interrupt_thread_vec.emplace_back(std::thread([this]() {
       this->router->interrupt(Interrupt::FRAME_RECEIVED);
-    });
+    }));
   }
-  interrupt_thread.join();
+  for (int i = 0; i < interrupt_thread_vec.size(); i++) {
+    interrupt_thread_vec.at(i).join();
+  }
 }
 
 void Switch::register_in_arp_table(Ethernet* frame) {
